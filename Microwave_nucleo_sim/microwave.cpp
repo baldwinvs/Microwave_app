@@ -52,8 +52,8 @@ Microwave::Microwave(QWidget *parent)
     , ui(new Ui::Microwave)
     , inSocket{new QUdpSocket()}
     , outSocket{new QUdpSocket()}
-    , minuteTimer{new QTimer(this)}
-    , secondTimer{new QTimer(this)}
+    , minuteTimer{new QTimer()}
+    , secondTimer{new QTimer()}
     , clockTime()
     , proposedClockTime()
     , displayTime()
@@ -100,6 +100,8 @@ Microwave::Microwave(QWidget *parent)
 
 Microwave::~Microwave()
 {
+    delete secondTimer;
+    delete minuteTimer;
     delete outSocket;
     delete inSocket;
     delete ui;
@@ -322,6 +324,16 @@ void Microwave::set_cook_time_exit()
     disconnect(this, SIGNAL(digit_entered(quint32)), this, SLOT(update_right_ones(quint32)));
 }
 
+void Microwave::cook_timer_initial_entry()
+{
+
+}
+
+void Microwave::cook_timer_initial_exit()
+{
+
+}
+
 void Microwave::set_power_level_entry()
 {
     send_current_power(); //ack
@@ -424,10 +436,10 @@ void Microwave::incrementClockTime()
 {
     //incrementing by 1 minute HH:MM
     ++clockTime.right_ones;
-    if(60 == clockTime.right_ones) {
+    if(10 == clockTime.right_ones) {
         clockTime.right_ones = 0;
         ++clockTime.right_tens;
-        if(60 == clockTime.right_tens) {
+        if(6 == clockTime.right_tens) {
             clockTime.right_tens = 0;
             ++clockTime.left_ones;
             if(1 == clockTime.left_tens) {
@@ -598,7 +610,6 @@ void Microwave::start_timer()
         send_current_timer();
         break;
     case MOD_STATE::SET_CLOCK:
-    default:
         break;
     }
 }

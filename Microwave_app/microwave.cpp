@@ -33,6 +33,9 @@ enum class Command : uint32_t {
     MOD_LEFT_ONES   = 0x00020000,
     MOD_RIGHT_TENS  = 0x00040000,
     MOD_RIGHT_ONES  = 0x00080000,
+    CURRENT_POWER   = 0x10000000,
+    CURRENT_KITCHEN = 0x20000000,
+    CURRENT_COOK    = 0x40000000,
     CURRENT_CLOCK   = 0x80000000
 };
 
@@ -198,25 +201,25 @@ QState* Microwave::create_display_clock_state(QState *parent)
 
 QState* Microwave::create_set_cook_time_state(QState *parent)
 {
-    Q_UNUSED(parent);
+    Q_UNUSED(parent)
     return new QState();
 }
 
 QState* Microwave::create_set_power_level_state(QState *parent)
 {
-    Q_UNUSED(parent);
+    Q_UNUSED(parent)
     return new QState();
 }
 
 QState* Microwave::create_set_kitchen_timer_state(QState *parent)
 {
-    Q_UNUSED(parent);
+    Q_UNUSED(parent)
     return new QState();
 }
 
 QState* Microwave::create_display_timer_state(QState *parent)
 {
-    Q_UNUSED(parent);
+    Q_UNUSED(parent)
     return new QState();
 }
 
@@ -364,9 +367,10 @@ void Microwave::readDatagram()
             break;
         case Command::CURRENT_CLOCK:
             memcpy(&clockTime, rbuf.data() + sizeof(quint32), sizeof(Time));
+            display_left();
+            display_right();
             break;
         case Command::NONE:
-        default:
             //do nothing
             break;
         }
