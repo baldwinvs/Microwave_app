@@ -37,19 +37,28 @@ public:
         quint32 right_ones;
     };
 
+    enum class MOD_STATE : uint32_t {
+        NONE,
+        SET_CLOCK,
+        SET_COOK,
+        SET_POWER,
+        SET_KITCHEN
+    };
+
 signals:
     void clock_sig();
     void cook_time_sig();
     void power_level_sig();
     void next_digit_sig();
     void clock_done_sig();
-    void digit_entered(quint32);
     void stop_sig();
     void start_sig();
     void select_left_tens_sig();
     void select_left_ones_sig();
     void select_right_tens_sig();
     void select_right_ones_sig();
+    void display_timer_done_sig();
+    void blink_sig();
 
 private:
     Ui::Microwave *ui;
@@ -58,12 +67,12 @@ private:
     QTimer* blinkTimer;
     QTimer* colonBlinkTimer;
 
-    Time clockTime;
-    Time proposedClockTime;
-    Time countdownTime;
+    Time time;
+    quint32 powerLevel;
     bool blinkage;
     bool colon_blink;
     bool setting_clock;
+    MOD_STATE currentModState;
 
     QStateMachine* sm;
     QState* display_clock;
@@ -99,9 +108,8 @@ private slots:
     void sendStart();
     void sendCurrentClockReq();
 
-    void display_left();
-    void display_right();
-    void display_colon();
+    void displayClock();
+    void displayPowerLevel();
 
     void blink_colon();
 
@@ -112,11 +120,6 @@ private slots:
 
     void accept_clock();
     void decline_clock();
-
-    void update_left_tens(quint32 digit);
-    void update_left_ones(quint32 digit);
-    void update_right_tens(quint32 digit);
-    void update_right_ones(quint32 digit);
 
     void set_clock_entry();
     void set_clock_exit();
@@ -132,5 +135,14 @@ private slots:
 
     void select_minute_ones_entry();
     void select_minute_ones_exit();
+
+    void set_cook_time_entry();
+    void set_cook_time_exit();
+
+    void set_power_level_entry();
+    void set_power_level_exit();
+
+    void display_timer_entry();
+    void display_timer_exit();
 };
 #endif // MICROWAVE_H

@@ -37,6 +37,18 @@ public:
         quint32 right_ones;
     };
 
+    class TimeInfo
+    {
+    public:
+        inline TimeInfo()
+            : timer{},
+              powerLevel{}
+        {}
+
+        Time timer;
+        quint32 powerLevel;
+    };
+
     //states that modify stuff
     enum class MOD_STATE : uint32_t {
         NONE,
@@ -62,14 +74,15 @@ private:
     Ui::Microwave *ui;
     QUdpSocket* inSocket;
     QUdpSocket* outSocket;
-    QTimer* minuteTimer;
-    QTimer* secondTimer;
+    QTimer* clockMinuteTimer;
+    QTimer* clockHalfSecondTimer;
+    QTimer* countdownSecondTimer;
 
     static const quint32 maxCookTimes {2};
 
     Time clockTime;
     Time proposedClockTime;
-    Time displayTime[maxCookTimes];
+    TimeInfo displayTime[maxCookTimes];
     quint32 powerLevel;
     bool setting_clock; //maybe
     bool set_cook_time_initial_digit;
@@ -96,7 +109,7 @@ private slots:
     void decrementTimer();
     void add30Seconds(Time& time);
 
-    void send_current_clock();  //CURRENT_CLOCK + clockTime
+    void send_clock(Time& time);//CURRENT_CLOCK + clockTime/proposedTime
     void send_current_cook();   //CURRENT_COOK + cookTime       //no usage right now
     void send_current_power();  //CURRENT_POWER + powerLevel
     void send_current_timer();  //CURRENT_TIMER + displayTime
@@ -104,6 +117,7 @@ private slots:
     void send_clock_cmd();
     void send_stop_cmd();
     void send_digit_cmd(const quint32 digit);
+    void send_blink_cmd();
 
     void accept_clock();
     void decline_clock();
