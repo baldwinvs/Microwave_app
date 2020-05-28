@@ -104,9 +104,6 @@ Microwave::Microwave(QWidget *parent)
     connect(inSocket, SIGNAL(readyRead()),
             this, SLOT(readDatagram()));
 
-    connect(this, SIGNAL(blink_sig()),
-            this, SLOT(blink_colon()));
-
     blinkTimer->setInterval(500);
     blinkTimer->setSingleShot(false);
 
@@ -153,8 +150,11 @@ QState* Microwave::create_display_clock_state(QState *parent)
     select_minute_ones->setObjectName("select_minute_ones");
 
     //display_clock
-    connect(display_clock, SIGNAL(entered()), this, SLOT(displayClock()));
+    connect(display_clock, SIGNAL(entered()), this, SLOT(display_clock_entry()));
     connect(display_clock, SIGNAL(entered()), this, SLOT(sendCurrentClockReq()));
+    connect(display_clock, SIGNAL(exited()), this, SLOT(display_clock_exit()));
+    connect(this, SIGNAL(blink_sig()),
+            this, SLOT(blink_colon()));
     display_clock_init->addTransition(this, SIGNAL(clock_sig()), set_clock);
 
     //set_clock
@@ -250,6 +250,18 @@ QState* Microwave::create_display_timer_state(QState *parent)
     display_timer_paused->addTransition(this, SIGNAL(start_sig()), display_timer_running);
     display_timer->setInitialState(display_timer_running);
     return display_timer;
+}
+
+void Microwave::display_clock_entry()
+{
+    qDebug() << "entered display_clock";
+    connect(this, SIGNAL(blink_sig()), this, SLOT(blink_colon()));
+}
+
+void Microwave::display_clock_exit()
+{
+    qDebug() << "left display_clock";
+    connect(this, SIGNAL(blink_sig()), this, SLOT(blink_colon()));
 }
 
 void Microwave::set_clock_entry()
@@ -357,7 +369,6 @@ void Microwave::readDatagram()
         Command data {Command::NONE};
         memcpy(&data, rbuf.data(), sizeof(data));
 
-        qDebug() << "Data = 0x" << QString::number(static_cast<quint32>(data), 16);
         //now parse data
         switch(data) {
         case Command::TIME_COOK:
@@ -567,7 +578,8 @@ void Microwave::displayPowerLevel()
 {
     ui->left_tens->setText("P");
     ui->left_ones->setText("L");
-    ui->right_tens->setText(QString::number(powerLevel / 10));
+    const quint32 left_digit {powerLevel / 10};
+    ui->right_tens->setText(1 == left_digit ? QString::number(left_digit) : "");
     ui->right_ones->setText(QString::number(powerLevel % 10));
     ui->colon->setText("");
 }

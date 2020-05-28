@@ -43,6 +43,7 @@ enum class Command : uint32_t {
 };
 
 const quint32 initialPowerLevel {10};
+qint32 timeRemaining{};
 
 const quint16 APP_RECV_PORT {64000};
 const quint16 SIM_RECV_PORT {64001};
@@ -81,9 +82,11 @@ Microwave::Microwave(QWidget *parent)
 
     clockMinuteTimer->setInterval(60000);
     clockMinuteTimer->setSingleShot(false);
+    connect(clockMinuteTimer, SIGNAL(timeout()), this, SLOT(incrementClockTime()));
 
     clockHalfSecondTimer->setInterval(500);
     clockHalfSecondTimer->setSingleShot(false);
+    connect(clockHalfSecondTimer, SIGNAL(timeout()), this, SLOT(send_blink_cmd()));
 
     countdownSecondTimer->setInterval(1000);
     countdownSecondTimer->setSingleShot(false);
@@ -213,8 +216,11 @@ QState* Microwave::create_display_timer_state(QState *parent)
     connect(display_timer, SIGNAL(exited()), countdownSecondTimer, SLOT(stop()));
     connect(display_timer, SIGNAL(exited()), this, SLOT(display_timer_exit()));
 
+    connect(display_timer_paused, SIGNAL(entered()), this, SLOT(display_timer_paused_entry()));
+    connect(display_timer_paused, SIGNAL(exited()), this, SLOT(display_timer_paused_exit()));
+
     display_timer_running->addTransition(this, SIGNAL(stop_sig()), display_timer_paused);
-    display_timer_paused->addTransition(this, SIGNAL(start_sig()), display_timer_running);
+    display_timer_paused->addTransition(this, SIGNAL(start_sig()), display_timer);
     display_timer->setInitialState(display_timer_running);
     return display_timer;
 }
@@ -223,15 +229,12 @@ void Microwave::display_clock_entry()
 {
     ui->textEdit->append("display_clock entered");
     send_clock(clockTime);
-    connect(clockMinuteTimer, SIGNAL(timeout()), this, SLOT(incrementClockTime()));
-    connect(clockHalfSecondTimer, SIGNAL(timeout()), this, SLOT(send_blink_cmd()));
+    currentModState = MOD_STATE::NONE;
 }
 
 void Microwave::display_clock_exit()
 {
     ui->textEdit->append("display_clock exited");
-    disconnect(clockMinuteTimer, SIGNAL(timeout()), this, SLOT(incrementClockTime()));
-    disconnect(clockHalfSecondTimer, SIGNAL(timeout()), this, SLOT(send_blink_cmd()));
 }
 
 void Microwave::set_clock_entry()
@@ -243,8 +246,6 @@ void Microwave::set_clock_entry()
         connect(this, SIGNAL(stop_sig()), this, SLOT(decline_clock()));
         disconnect(this, SIGNAL(start_sig()), this, SLOT(start_timer()));
         disconnect(this, SIGNAL(stop_sig()), this, SLOT(stop_timer()));
-        disconnect(clockMinuteTimer, SIGNAL(timeout()), this, SLOT(incrementClockTime()));
-        disconnect(clockHalfSecondTimer, SIGNAL(timeout()), this, SLOT(send_blink_cmd()));
         display_clock->removeTransition(dynamic_cast<QAbstractTransition*>(set_cook_time_transition));
         proposedClockTime = clockTime;
         setting_clock = true;
@@ -260,8 +261,6 @@ void Microwave::set_clock_exit()
         disconnect(this, SIGNAL(stop_sig()), this, SLOT(decline_clock()));
         connect(this, SIGNAL(start_sig()), this, SLOT(start_timer()));
         connect(this, SIGNAL(stop_sig()), this, SLOT(stop_timer()));
-        connect(clockMinuteTimer, SIGNAL(timeout()), this, SLOT(incrementClockTime()));
-        connect(clockHalfSecondTimer, SIGNAL(timeout()), this, SLOT(send_blink_cmd()));
         display_clock->addTransition(dynamic_cast<QAbstractTransition*>(set_cook_time_transition));
     }
 }
@@ -390,6 +389,20 @@ void Microwave::display_timer_exit()
     disconnect(countdownSecondTimer, SIGNAL(timeout()), this, SLOT(decrementTimer()));
 }
 
+void Microwave::display_timer_paused_entry()
+{
+    ui->textEdit->append("display_timer_paused entered");
+    connect(this, SIGNAL(stop_sig()), this, SIGNAL(display_timer_done_sig()));
+    countdownSecondTimer->stop();
+}
+
+void Microwave::display_timer_paused_exit()
+{
+    ui->textEdit->append("display_timer_paused exited");
+    disconnect(this, SIGNAL(stop_sig()), this, SIGNAL(display_timer_done_sig()));
+    countdownSecondTimer->start();
+}
+
 void Microwave::readDatagram()
 {
     while(inSocket->hasPendingDatagrams()) {
@@ -489,8 +502,10 @@ void Microwave::incrementClockTime()
         }
     }
 
-    //send updated clock here
-    send_clock(clockTime);
+    //send updated clock here if not modifying anything, should replace this with state instead
+    if(MOD_STATE::NONE == currentModState) {
+        send_clock(clockTime);
+    }
 }
 
 void Microwave::decrementTimer()
@@ -615,9 +630,11 @@ void Microwave::send_digit_cmd(const quint32 digit)
 
 void Microwave::send_blink_cmd()
 {
-    const Command cmd {Command::BLINK};
-    memcpy(buf.data(), &cmd, sizeof(quint32));
-    outSocket->writeDatagram(buf.data(), sizeof(quint32), local, APP_RECV_PORT);
+    if(MOD_STATE::NONE == currentModState) {
+        const Command cmd {Command::BLINK};
+        memcpy(buf.data(), &cmd, sizeof(quint32));
+        outSocket->writeDatagram(buf.data(), sizeof(quint32), local, APP_RECV_PORT);
+    }
 }
 
 void Microwave::accept_clock()
@@ -759,7 +776,9 @@ void Microwave::update_right_ones(quint32 digit)
                     powerLevel = digit;
                 }
             }
-            powerLevel = digit;
+            else {
+                powerLevel = digit;
+            }
             send_current_power();
         }
         return;

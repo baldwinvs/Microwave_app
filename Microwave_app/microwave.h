@@ -121,6 +121,9 @@ private slots:
     void accept_clock();
     void decline_clock();
 
+    void display_clock_entry();
+    void display_clock_exit();
+
     void set_clock_entry();
     void set_clock_exit();
 

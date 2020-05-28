@@ -159,5 +159,8 @@ private slots:
 
     void display_timer_entry();
     void display_timer_exit();
+
+    void display_timer_paused_entry();
+    void display_timer_paused_exit();
 };
 #endif // MICROWAVE_H
