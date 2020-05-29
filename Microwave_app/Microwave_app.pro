@@ -20,10 +20,14 @@ SOURCES += \
     microwave.cpp
 
 HEADERS += \
-    microwave.h
+    microwave.h \
+    ../MicrowaveMessageFormat.h
 
 FORMS += \
     microwave.ui
+
+INCLUDEPATH += \
+    ../
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

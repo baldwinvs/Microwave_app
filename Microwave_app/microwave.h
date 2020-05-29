@@ -9,6 +9,8 @@ class QStateMachine;
 class QState;
 class QTimer;
 
+namespace MicrowaveMsgFormat { class Message; }
+
 QT_BEGIN_NAMESPACE
 namespace Ui { class Microwave; }
 QT_END_NAMESPACE
@@ -49,6 +51,7 @@ signals:
     void clock_sig();
     void cook_time_sig();
     void power_level_sig();
+    void kitchen_timer_sig();
     void next_digit_sig();
     void clock_done_sig();
     void stop_sig();
@@ -66,6 +69,7 @@ private:
     QUdpSocket* outSocket;
     QTimer* blinkTimer;
     QTimer* colonBlinkTimer;
+    MicrowaveMsgFormat::Message* msg;
 
     Time time;
     quint32 powerLevel;
@@ -86,6 +90,12 @@ private:
     QState* create_set_power_level_state(QState* parent = Q_NULLPTR);
     QState* create_set_kitchen_timer_state(QState* parent = Q_NULLPTR);
     QState* create_display_timer_state(QState* parent = Q_NULLPTR);
+
+    void handleState(const MicrowaveMsgFormat::Message& msg);
+    void handleSignal(const MicrowaveMsgFormat::Message& msg);
+    void handleUpdate(const MicrowaveMsgFormat::Message& msg);
+
+    void writeData(const MicrowaveMsgFormat::Message* const msg);
 
 private slots:
     void readDatagram();

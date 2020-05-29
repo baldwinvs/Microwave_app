@@ -1,4 +1,5 @@
 #include "microwave.h"
+#include "MicrowaveMessageFormat.h"
 #include "ui_microwave.h"
 
 #include <QDebug>
@@ -53,6 +54,7 @@ Microwave::Microwave(QWidget *parent)
     , inSocket{new QUdpSocket(this)}
     , outSocket{new QUdpSocket(this)}
     , blinkTimer{new QTimer(this)}
+    , msg{new MicrowaveMsgFormat::Message()}
     , time()
     , powerLevel{}
     , blinkage{false}
@@ -107,6 +109,8 @@ Microwave::Microwave(QWidget *parent)
     blinkTimer->setInterval(500);
     blinkTimer->setSingleShot(false);
 
+    msg->dst = MicrowaveMsgFormat::Destination::DEV;
+
     display_clock = create_display_clock_state(sm);
     set_cook_time = create_set_cook_time_state(sm);
     set_power_level = create_set_power_level_state(sm);
@@ -151,7 +155,7 @@ QState* Microwave::create_display_clock_state(QState *parent)
 
     //display_clock
     connect(display_clock, SIGNAL(entered()), this, SLOT(display_clock_entry()));
-    connect(display_clock, SIGNAL(entered()), this, SLOT(sendCurrentClockReq()));
+    connect(display_clock, SIGNAL(entered()), this, SLOT(sendCurrentClockRequest()));
     connect(display_clock, SIGNAL(exited()), this, SLOT(display_clock_exit()));
     connect(this, SIGNAL(blink_sig()),
             this, SLOT(blink_colon()));
@@ -363,198 +367,242 @@ void Microwave::display_timer_exit()
 
 void Microwave::readDatagram()
 {
+    using namespace MicrowaveMsgFormat;
     while(inSocket->hasPendingDatagrams()) {
         QNetworkDatagram datagram {inSocket->receiveDatagram()};
         QByteArray rbuf {datagram.data()};
-        Command data {Command::NONE};
-        memcpy(&data, rbuf.data(), sizeof(data));
 
-        //now parse data
-        switch(data) {
-        case Command::TIME_COOK:
-            emit cook_time_sig();
+        Message rxMsg(rbuf.data());
+
+        if(Destination::APP != rxMsg.dst) {
+            return;
+        }
+
+        Type type = static_cast<Type>(static_cast<uint32_t>(rxMsg.state) >> 24);
+
+        switch(type) {
+        case Type::STATE:
+            handleState(rxMsg);
             break;
-        case Command::POWER_LEVEL:
-            emit power_level_sig();
+        case Type::SIGNAL:
+            handleSignal(rxMsg);
             break;
-        case Command::KITCHEN_TIMER:
-            //emit set_kitchen_timer();
-            break;
-        case Command::CLOCK:
-            emit clock_sig();
-            break;
-        case Command::STOP:
-            emit stop_sig();
-            break;
-        case Command::START:
-            emit start_sig();
-            break;
-        case Command::MOD_LEFT_TENS:
-            emit select_left_tens_sig();
-            break;
-        case Command::MOD_LEFT_ONES:
-            emit select_left_ones_sig();
-            break;
-        case Command::MOD_RIGHT_TENS:
-            emit select_right_tens_sig();
-            break;
-        case Command::MOD_RIGHT_ONES:
-            emit select_right_ones_sig();
-            break;
-        case Command::BLINK:
-            emit blink_sig();
-            break;
-        case Command::CURRENT_POWER:
-            memcpy(&powerLevel, rbuf.data() + sizeof(quint32), sizeof(quint32));
-            displayPowerLevel();
-            break;
-        case Command::CURRENT_KITCHEN:
-        case Command::CURRENT_COOK:
-        case Command::CURRENT_CLOCK:
-            memcpy(&time, rbuf.data() + sizeof(quint32), sizeof(Time));
-            displayClock();
-            break;
-        default:
-        case Command::NONE:
-            //do nothing
+        case Type::UPDATE:
+            handleUpdate(rxMsg);
             break;
         }
     }
 }
 
+void Microwave::handleState(const MicrowaveMsgFormat::Message &msg)
+{
+    using namespace MicrowaveMsgFormat;
+    switch(msg.state) {
+    case State::DISPLAY_CLOCK:
+        break;
+    case State::SET_CLOCK:
+        break;
+    case State::CLOCK_SELECT_HOUR_TENS:
+        break;
+    case State::CLOCK_SELECT_HOUR_ONES:
+        break;
+    case State::CLOCK_SELECT_MINUTE_TENS:
+        break;
+    case State::CLOCK_SELECT_MINUTE_ONES:
+        break;
+    case State::SET_COOK_TIME:
+        break;
+    case State::SET_POWER_LEVEL:
+        break;
+    case State::SET_KITCHEN_TIMER:
+        break;
+    case State::KITCHEN_SELECT_HOUR_TENS:
+        break;
+    case State::KITCHEN_SELECT_HOUR_ONES:
+        break;
+    case State::KITCHEN_SELECT_MINUTE_TENS:
+        break;
+    case State::KITCHEN_SELECT_MINUTE_ONES:
+        break;
+    case State::DISPLAY_TIMER:
+        break;
+    case State::DISPLAY_TIMER_RUNNING:
+        break;
+    case State::DISPLAY_TIMER_PAUSED:
+        break;
+    case State::NONE:
+        break;
+    }
+}
+
+void Microwave::handleSignal(const MicrowaveMsgFormat::Message &msg)
+{
+    using namespace MicrowaveMsgFormat;
+    switch(msg.signal) {
+    case Signal::CLOCK:
+        emit clock_sig();
+        break;
+    case Signal::COOK_TIME:
+        emit cook_time_sig();
+        break;
+    case Signal::POWER_LEVEL:
+        emit power_level_sig();
+        break;
+    case Signal::KITCHEN_TIMER:
+        emit kitchen_timer_sig();
+        break;
+    case Signal::STOP:
+        emit stop_sig();
+        break;
+    case Signal::START:
+        emit start_sig();
+        break;
+    case Signal::BLINK:
+        emit blink_sig();
+        break;
+    case Signal::MOD_LEFT_TENS:
+        emit select_left_tens_sig();
+        break;
+    case Signal::MOD_LEFT_ONES:
+        emit select_left_ones_sig();
+        break;
+    case Signal::MOD_RIGHT_TENS:
+        emit select_right_tens_sig();
+        break;
+    case Signal::MOD_RIGHT_ONES:
+        emit select_right_ones_sig();
+        break;
+    case Signal::NONE:
+    default:
+        break;
+    }
+}
+
+void Microwave::handleUpdate(const MicrowaveMsgFormat::Message &msg)
+{
+    using namespace MicrowaveMsgFormat;
+    switch(msg.update) {
+    case Update::CLOCK:
+    case Update::COOK_TIME:
+    case Update::KITCHEN_TIMER:
+        memcpy(&time, msg.data, sizeof(Time));
+        displayClock();
+        break;
+    case Update::POWER_LEVEL:
+        memcpy(&powerLevel, msg.data, sizeof(quint32));
+        displayPowerLevel();
+        break;
+    case Update::NONE:
+        break;
+    }
+}
+
+void Microwave::writeData(const MicrowaveMsgFormat::Message* const msg)
+{
+    memcpy(buf.data(), msg, sizeof(MicrowaveMsgFormat::Message));
+    outSocket->writeDatagram(buf.data(), sizeof(MicrowaveMsgFormat::Message), local, SIM_RECV_PORT);
+}
 void Microwave::sendTimeCook()
 {
     qDebug() << "time cook";
-    Command cmd {Command::TIME_COOK};
-    memcpy(buf.data(), &cmd, sizeof(Command));
-
-    outSocket->writeDatagram(buf.data(), sizeof(Command), local, SIM_RECV_PORT);
+    msg->signal = MicrowaveMsgFormat::Signal::COOK_TIME;
+    writeData(msg);
 }
 
 void Microwave::sendPowerLevel()
 {
     qDebug() << "power level";
-    Command cmd {Command::POWER_LEVEL};
-    memcpy(buf.data(), &cmd, sizeof(Command));
-
-    outSocket->writeDatagram(buf.data(), sizeof(Command), local, SIM_RECV_PORT);
+    msg->signal = MicrowaveMsgFormat::Signal::POWER_LEVEL;
+    writeData(msg);
 }
 
 void Microwave::sendKitchenTimer()
 {
     qDebug() << "kitchen timer";
-    Command cmd {Command::KITCHEN_TIMER};
-    memcpy(buf.data(), &cmd, sizeof(Command));
-
-    outSocket->writeDatagram(buf.data(), sizeof(Command), local, SIM_RECV_PORT);
+    msg->signal = MicrowaveMsgFormat::Signal::KITCHEN_TIMER;
+    writeData(msg);
 }
 
 void Microwave::sendClock()
 {
     qDebug() << "clock";
-    Command cmd {Command::CLOCK};
-    memcpy(buf.data(), &cmd, sizeof(Command));
-
-    outSocket->writeDatagram(buf.data(), sizeof(cmd), local, SIM_RECV_PORT);
+    msg->signal = MicrowaveMsgFormat::Signal::CLOCK;
+    writeData(msg);
 }
 
 void Microwave::send0()
 {
-    Command cmd {Command::DIGIT_0};
-    memcpy(buf.data(), &cmd, sizeof(Command));
-
-    outSocket->writeDatagram(buf.data(), sizeof(Command), local, SIM_RECV_PORT);
+    msg->signal = MicrowaveMsgFormat::Signal::DIGIT_0;
+    writeData(msg);
 }
 
 void Microwave::send1()
 {
-    Command cmd {Command::DIGIT_1};
-    memcpy(buf.data(), &cmd, sizeof(Command));
-
-    outSocket->writeDatagram(buf.data(), sizeof(Command), local, SIM_RECV_PORT);
+    msg->signal = MicrowaveMsgFormat::Signal::DIGIT_1;
+    writeData(msg);
 }
 
 void Microwave::send2()
 {
-    Command cmd {Command::DIGIT_2};
-    memcpy(buf.data(), &cmd, sizeof(Command));
-
-    outSocket->writeDatagram(buf.data(), sizeof(Command), local, SIM_RECV_PORT);
+    msg->signal = MicrowaveMsgFormat::Signal::DIGIT_2;
+    writeData(msg);
 }
 
 void Microwave::send3()
 {
-    Command cmd {Command::DIGIT_3};
-    memcpy(buf.data(), &cmd, sizeof(Command));
-
-    outSocket->writeDatagram(buf.data(), sizeof(Command), local, SIM_RECV_PORT);
+    msg->signal = MicrowaveMsgFormat::Signal::DIGIT_3;
+    writeData(msg);
 }
 
 void Microwave::send4()
 {
-    Command cmd {Command::DIGIT_4};
-    memcpy(buf.data(), &cmd, sizeof(Command));
-
-    outSocket->writeDatagram(buf.data(), sizeof(Command), local, SIM_RECV_PORT);
+    msg->signal = MicrowaveMsgFormat::Signal::DIGIT_4;
+    writeData(msg);
 }
 
 void Microwave::send5()
 {
-    Command cmd {Command::DIGIT_5};
-    memcpy(buf.data(), &cmd, sizeof(Command));
-
-    outSocket->writeDatagram(buf.data(), sizeof(Command), local, SIM_RECV_PORT);
+    msg->signal = MicrowaveMsgFormat::Signal::DIGIT_5;
+    writeData(msg);
 }
 
 void Microwave::send6()
 {
-    Command cmd {Command::DIGIT_6};
-    memcpy(buf.data(), &cmd, sizeof(Command));
-
-    outSocket->writeDatagram(buf.data(), sizeof(Command), local, SIM_RECV_PORT);
+    msg->signal = MicrowaveMsgFormat::Signal::DIGIT_6;
+    writeData(msg);
 }
 
 void Microwave::send7()
 {
-    Command cmd {Command::DIGIT_7};
-    memcpy(buf.data(), &cmd, sizeof(Command));
-
-    outSocket->writeDatagram(buf.data(), sizeof(Command), local, SIM_RECV_PORT);
+    msg->signal = MicrowaveMsgFormat::Signal::DIGIT_7;
+    writeData(msg);
 }
 
 void Microwave::send8()
 {
-    Command cmd {Command::DIGIT_8};
-    memcpy(buf.data(), &cmd, sizeof(Command));
-
-    outSocket->writeDatagram(buf.data(), sizeof(Command), local, SIM_RECV_PORT);
+    msg->signal = MicrowaveMsgFormat::Signal::DIGIT_8;
+    writeData(msg);
 }
 
 void Microwave::send9()
 {
-    Command cmd {Command::DIGIT_9};
-    memcpy(buf.data(), &cmd, sizeof(Command));
-
-    outSocket->writeDatagram(buf.data(), sizeof(Command), local, SIM_RECV_PORT);
+    msg->signal = MicrowaveMsgFormat::Signal::DIGIT_9;
+    writeData(msg);
 }
 
 void Microwave::sendStop()
 {
-    Command cmd {Command::STOP};
-    memcpy(buf.data(), &cmd, sizeof(Command));
-
-    outSocket->writeDatagram(buf.data(), sizeof(Command), local, SIM_RECV_PORT);
+    msg->signal = MicrowaveMsgFormat::Signal::STOP;
+    writeData(msg);
 }
 
 void Microwave::sendStart()
 {
-    Command cmd {Command::START};
-    memcpy(buf.data(), &cmd, sizeof(Command));
-
-    outSocket->writeDatagram(buf.data(), sizeof(Command), local, SIM_RECV_PORT);
+    msg->signal = MicrowaveMsgFormat::Signal::START;
+    writeData(msg);
 }
 
-void Microwave::sendCurrentClockReq()
+void Microwave::sendCurrentClockRequest()
 {
     Command cmd {Command::CURRENT_CLOCK};
     memcpy(buf.data(), &cmd, sizeof(cmd));

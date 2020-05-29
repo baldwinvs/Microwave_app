@@ -7,9 +7,9 @@
 //temp
 #include <cstdio>
 
-namespace Microwave {
+namespace MicrowaveMsgFormat {
 
-enum class Header : uint32_t {
+enum class Destination : uint32_t {
     APP = 0x4D617070,
     DEV = 0x4D646576
 };
@@ -34,10 +34,10 @@ enum class State : uint32_t {
     KITCHEN_SELECT_HOUR_TENS    = 0x10000200,
     KITCHEN_SELECT_HOUR_ONES    = 0x10000400,
     KITCHEN_SELECT_MINUTE_TENS  = 0x10000800,
-    KITCHEN_SELECT_MINUTE_ONES  = 0x10000100,
-    DISPLAY_TIMER               = 0x10000200,
-    DISPLAY_TIMER_RUNNING       = 0x10000400,
-    DISPLAY_TIMER_PAUSED        = 0x10000800,
+    KITCHEN_SELECT_MINUTE_ONES  = 0x10001000,
+    DISPLAY_TIMER               = 0x10002000,
+    DISPLAY_TIMER_RUNNING       = 0x10004000,
+    DISPLAY_TIMER_PAUSED        = 0x10008000,
 };
 
 enum class Signal : uint32_t {
@@ -59,6 +59,10 @@ enum class Signal : uint32_t {
     DIGIT_8         = 0x20004000,
     DIGIT_9         = 0x20008000,
     BLINK           = 0x20010000,
+    MOD_LEFT_TENS   = 0x20020000,
+    MOD_LEFT_ONES   = 0x20040000,
+    MOD_RIGHT_TENS  = 0x20080000,
+    MOD_RIGHT_ONES  = 0x20100000,
 };
 
 enum class Update : uint32_t {
@@ -83,9 +87,6 @@ public:
     Message(const char* rxData)
         : data{}
     {
-        //use the copy constructor
-        // const Message rxMsg = *reinterpret_cast<const Message*>(rxData);
-        // *this = rxMsg;
         memcpy(this, rxData, sizeof(Message));
     }
     
@@ -104,8 +105,7 @@ public:
         return 0 != memcmp(this, &rhs, sizeof(Message));
     }
 
-    Header hdr;
-    Type messageType;
+    Destination dst;
     union {
         State state;
         Signal signal;
@@ -114,6 +114,6 @@ public:
     char data[sizeof(Time)];
 };
 
-} // namespace Microwave
+} // namespace MicrowaveMsgFormat
 
 #endif // MICROWAVE_MESSAGE_FORMAT_H
