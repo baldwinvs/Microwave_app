@@ -4,9 +4,6 @@
 #include <cstring>
 #include <cstdint>
 
-//temp
-#include <cstdio>
-
 namespace MicrowaveMsgFormat {
 
 enum class Destination : uint32_t {
@@ -58,19 +55,19 @@ enum class Signal : uint32_t {
     DIGIT_7         = 0x20002000,
     DIGIT_8         = 0x20004000,
     DIGIT_9         = 0x20008000,
-    BLINK           = 0x20010000,
-    MOD_LEFT_TENS   = 0x20020000,
-    MOD_LEFT_ONES   = 0x20040000,
-    MOD_RIGHT_TENS  = 0x20080000,
-    MOD_RIGHT_ONES  = 0x20100000,
+    BLINK_ON        = 0x20010000,
+    BLINK_OFF       = 0x20020000,
+    MOD_LEFT_TENS   = 0x20040000,
+    MOD_LEFT_ONES   = 0x20080000,
+    MOD_RIGHT_TENS  = 0x20100000,
+    MOD_RIGHT_ONES  = 0x20200000,
 };
 
 enum class Update : uint32_t {
     NONE            = 0X40000000,
     CLOCK           = 0x40000001,
-    COOK_TIME       = 0x40000002,
+    DISPLAY_TIMER   = 0x40000002,
     POWER_LEVEL     = 0x40000004,
-    KITCHEN_TIMER   = 0x40000008,
 };
 
 struct Time {

@@ -116,9 +116,9 @@ private slots:
     void send9();
     void sendStop();
     void sendStart();
-    void sendCurrentClockReq();
+    void sendCurrentClockRequest();
 
-    void displayClock();
+    void displayTime();
     void displayPowerLevel();
 
     void blink_colon();

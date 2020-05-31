@@ -171,7 +171,7 @@ QState* Microwave::create_display_clock_state(QState *parent)
     connect(select_hour_tens, SIGNAL(entered()), this, SLOT(select_hour_tens_entry()));
     connect(select_hour_tens, SIGNAL(entered()), blinkTimer, SLOT(start()));
     connect(select_hour_tens, SIGNAL(exited()), blinkTimer, SLOT(stop()));
-    connect(select_hour_tens, SIGNAL(exited()), this, SLOT(displayClock()));
+    connect(select_hour_tens, SIGNAL(exited()), this, SLOT(displayTime()));
     connect(select_hour_tens, SIGNAL(exited()), this, SLOT(select_hour_tens_exit()));
     select_hour_tens->addTransition(this, SIGNAL(select_left_ones_sig()), select_hour_ones);
 
@@ -179,7 +179,7 @@ QState* Microwave::create_display_clock_state(QState *parent)
     connect(select_hour_ones, SIGNAL(entered()), this, SLOT(select_hour_ones_entry()));
     connect(select_hour_ones, SIGNAL(entered()), blinkTimer, SLOT(start()));
     connect(select_hour_ones, SIGNAL(exited()), blinkTimer, SLOT(stop()));
-    connect(select_hour_ones, SIGNAL(exited()), this, SLOT(displayClock()));
+    connect(select_hour_ones, SIGNAL(exited()), this, SLOT(displayTime()));
     connect(select_hour_ones, SIGNAL(exited()), this, SLOT(select_hour_ones_exit()));
     select_hour_ones->addTransition(this, SIGNAL(select_right_tens_sig()), select_minute_tens);
 
@@ -187,7 +187,7 @@ QState* Microwave::create_display_clock_state(QState *parent)
     connect(select_minute_tens, SIGNAL(entered()), this, SLOT(select_minute_tens_entry()));
     connect(select_minute_tens, SIGNAL(entered()), blinkTimer, SLOT(start()));
     connect(select_minute_tens, SIGNAL(exited()), blinkTimer, SLOT(stop()));
-    connect(select_minute_tens, SIGNAL(exited()), this, SLOT(displayClock()));
+    connect(select_minute_tens, SIGNAL(exited()), this, SLOT(displayTime()));
     connect(select_minute_tens, SIGNAL(exited()), this, SLOT(select_minute_tens_exit()));
     select_minute_tens->addTransition(this, SIGNAL(select_right_ones_sig()), select_minute_ones);
 
@@ -195,7 +195,7 @@ QState* Microwave::create_display_clock_state(QState *parent)
     connect(select_minute_ones, SIGNAL(entered()), this, SLOT(select_minute_ones_entry()));
     connect(select_minute_ones, SIGNAL(entered()), blinkTimer, SLOT(start()));
     connect(select_minute_ones, SIGNAL(exited()), blinkTimer, SLOT(stop()));
-    connect(select_minute_ones, SIGNAL(exited()), this, SLOT(displayClock()));
+    connect(select_minute_ones, SIGNAL(exited()), this, SLOT(displayTime()));
     connect(select_minute_ones, SIGNAL(exited()), this, SLOT(select_minute_ones_exit()));
     select_minute_ones->addTransition(this, SIGNAL(select_left_tens_sig()), select_hour_tens);
 
@@ -483,10 +483,9 @@ void Microwave::handleUpdate(const MicrowaveMsgFormat::Message &msg)
     using namespace MicrowaveMsgFormat;
     switch(msg.update) {
     case Update::CLOCK:
-    case Update::COOK_TIME:
-    case Update::KITCHEN_TIMER:
+    case Update::DISPLAY_TIMER:
         memcpy(&time, msg.data, sizeof(Time));
-        displayClock();
+        displayTime();
         break;
     case Update::POWER_LEVEL:
         memcpy(&powerLevel, msg.data, sizeof(quint32));
@@ -610,7 +609,7 @@ void Microwave::sendCurrentClockRequest()
     outSocket->writeDatagram(buf.data(), sizeof(cmd), local, SIM_RECV_PORT);
 }
 
-void Microwave::displayClock()
+void Microwave::displayTime()
 {
     ui->left_tens->setText(QString::number(time.left_tens));
     ui->left_ones->setText(QString::number(time.left_ones));
