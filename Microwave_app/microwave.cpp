@@ -3,434 +3,513 @@
 #include "ui_microwave.h"
 
 #include <QDebug>
-#include <QUdpSocket>
+#include <QTcpSocket>
 #include <QNetworkDatagram>
 #include <QStateMachine>
 #include <QState>
-#include <QFinalState>
+#include <QSignalTransition>
 #include <QTimer>
-#include <QDataStream>
 
 namespace {
-enum class Command : uint32_t {
-    NONE            = 0x00000000,
-    TIME_COOK       = 0x00000001,
-    POWER_LEVEL     = 0x00000002,
-    KITCHEN_TIMER   = 0x00000004,
-    CLOCK           = 0x00000008,
-    DIGIT_0         = 0x00000010,
-    DIGIT_1         = 0x00000020,
-    DIGIT_2         = 0x00000040,
-    DIGIT_3         = 0x00000080,
-    DIGIT_4         = 0x00000100,
-    DIGIT_5         = 0x00000200,
-    DIGIT_6         = 0x00000400,
-    DIGIT_7         = 0x00000800,
-    DIGIT_8         = 0x00001000,
-    DIGIT_9         = 0x00002000,
-    STOP            = 0x00004000,
-    START           = 0x00008000,
-    MOD_LEFT_TENS   = 0x00010000,
-    MOD_LEFT_ONES   = 0x00020000,
-    MOD_RIGHT_TENS  = 0x00040000,
-    MOD_RIGHT_ONES  = 0x00080000,
-    BLINK           = 0x00100000,
-    CURRENT_POWER   = 0x10000000,
-    CURRENT_KITCHEN = 0x20000000,
-    CURRENT_COOK    = 0x40000000,
-    CURRENT_CLOCK   = 0x80000000
-};
 
-const quint16 APP_RECV_PORT {64000};
-const quint16 SIM_RECV_PORT {64001};
-const QHostAddress local {QHostAddress::LocalHost};
-QByteArray buf{};
+const quint16 DEV_RECV_PORT {60002};
+const QHostAddress server {QHostAddress("192.168.0.10")};
+
 }
-
 
 Microwave::Microwave(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::Microwave)
-    , inSocket{new QUdpSocket(this)}
-    , outSocket{new QUdpSocket(this)}
-    , blinkTimer{new QTimer(this)}
-    , msg{new MicrowaveMsgFormat::Message()}
-    , time()
+    , socket{new QTcpSocket(this)}
+    , txBuf{}
+    , rxBuf{}
+    , stateRequestTimer{new QTimer(this)}
+    , txMessage{new MicrowaveMsgFormat::Message()}
+    , rxMessage{new MicrowaveMsgFormat::Message()}
+    , time{new MicrowaveMsgFormat::Time()}
     , powerLevel{}
-    , blinkage{false}
-    , colon_blink{false}
-    , setting_clock{false}
     , sm{new QStateMachine(this)}
-    , display_clock{Q_NULLPTR}
-    , set_cook_time{Q_NULLPTR}
-    , set_power_level{Q_NULLPTR}
-    , set_kitchen_timer{Q_NULLPTR}
-    , display_timer{Q_NULLPTR}
+    , InitialState{new QState(sm)}
+    , DisplayClock{Q_NULLPTR}
+    , DisplayClockInit{Q_NULLPTR}
+    , SetClock{Q_NULLPTR}
+    , ClockSelectHourTens{Q_NULLPTR}
+    , ClockSelectHourOnes{Q_NULLPTR}
+    , ClockSelectMinuteTens{Q_NULLPTR}
+    , ClockSelectMinuteOnes{Q_NULLPTR}
+    , SetCookTimer{Q_NULLPTR}
+    , SetCookTimerInit{Q_NULLPTR}
+    , SetPowerLevel{Q_NULLPTR}
+    , SetPowerLevelInit{Q_NULLPTR}
+    , SetKitchenTimer{Q_NULLPTR}
+    , SetKitchenTimerInit{Q_NULLPTR}
+    , KitchenSelectMinuteTens{Q_NULLPTR}
+    , KitchenSelectMinuteOnes{Q_NULLPTR}
+    , KitchenSelectSecondTens{Q_NULLPTR}
+    , KitchenSelectSecondOnes{Q_NULLPTR}
+    , DisplayTimer{Q_NULLPTR}
+    , DisplayTimerInit{Q_NULLPTR}
+    , SetCookTimerTransition{Q_NULLPTR}
+    , SetKitchenTimerTransition{Q_NULLPTR}
+    , DisplayTimerTransition{Q_NULLPTR}
 {
     ui->setupUi(this);
-    connect(ui->pb_timeCook, SIGNAL(clicked()),
-            this, SLOT(sendTimeCook()));
-    connect(ui->pb_powerLevel, SIGNAL(clicked()),
-            this, SLOT(sendPowerLevel()));
-    connect(ui->pb_kitchenTimer, SIGNAL(clicked()),
-            this, SLOT(sendKitchenTimer()));
-    connect(ui->pb_clock, SIGNAL(clicked()),
-            this, SLOT(sendClock()));
-    connect(ui->pb_0, SIGNAL(clicked()),
-            this, SLOT(send0()));
-    connect(ui->pb_1, SIGNAL(clicked()),
-            this, SLOT(send1()));
-    connect(ui->pb_2, SIGNAL(clicked()),
-            this, SLOT(send2()));
-    connect(ui->pb_3, SIGNAL(clicked()),
-            this, SLOT(send3()));
-    connect(ui->pb_4, SIGNAL(clicked()),
-            this, SLOT(send4()));
-    connect(ui->pb_5, SIGNAL(clicked()),
-            this, SLOT(send5()));
-    connect(ui->pb_6, SIGNAL(clicked()),
-            this, SLOT(send6()));
-    connect(ui->pb_7, SIGNAL(clicked()),
-            this, SLOT(send7()));
-    connect(ui->pb_8, SIGNAL(clicked()),
-            this, SLOT(send8()));
-    connect(ui->pb_9, SIGNAL(clicked()),
-            this, SLOT(send9()));
-    connect(ui->pb_stop, SIGNAL(clicked()),
-            this, SLOT(sendStop()));
-    connect(ui->pb_start, SIGNAL(clicked()),
-            this, SLOT(sendStart()));
+    connect(ui->pb_timeCook, SIGNAL(clicked()), this, SLOT(sendTimeCook()));
+    connect(ui->pb_powerLevel, SIGNAL(clicked()), this, SLOT(sendPowerLevel()));
+    connect(ui->pb_kitchenTimer, SIGNAL(clicked()), this, SLOT(sendKitchenTimer()));
+    connect(ui->pb_clock, SIGNAL(clicked()), this, SLOT(sendClock()));
+    connect(ui->pb_0, SIGNAL(clicked()), this, SLOT(send0()));
+    connect(ui->pb_1, SIGNAL(clicked()), this, SLOT(send1()));
+    connect(ui->pb_2, SIGNAL(clicked()), this, SLOT(send2()));
+    connect(ui->pb_3, SIGNAL(clicked()), this, SLOT(send3()));
+    connect(ui->pb_4, SIGNAL(clicked()), this, SLOT(send4()));
+    connect(ui->pb_5, SIGNAL(clicked()), this, SLOT(send5()));
+    connect(ui->pb_6, SIGNAL(clicked()), this, SLOT(send6()));
+    connect(ui->pb_7, SIGNAL(clicked()), this, SLOT(send7()));
+    connect(ui->pb_8, SIGNAL(clicked()), this, SLOT(send8()));
+    connect(ui->pb_9, SIGNAL(clicked()), this, SLOT(send9()));
+    connect(ui->pb_stop, SIGNAL(clicked()), this, SLOT(sendStop()));
+    connect(ui->pb_start, SIGNAL(clicked()), this, SLOT(sendStart()));
 
-    inSocket->bind(local, APP_RECV_PORT);
+    connect(socket, SIGNAL(connected()), this, SLOT(onTcpConnect()));
+    connect(socket, SIGNAL(disconnected()), this, SLOT(onTcpDisconnect()));
 
-    connect(inSocket, SIGNAL(readyRead()),
-            this, SLOT(readDatagram()));
+    txMessage->dst = MicrowaveMsgFormat::Destination::DEV;
 
-    blinkTimer->setInterval(500);
-    blinkTimer->setSingleShot(false);
+    connect(InitialState, SIGNAL(entered()), this, SLOT(InitialStateEntry()));
+    connect(InitialState, SIGNAL(exited()), this, SLOT(InitialStateExit()));
 
-    msg->dst = MicrowaveMsgFormat::Destination::DEV;
+    SetupDisplayClockState(sm);
+    SetupSetCookTimerState(sm);
+    SetupSetPowerLevelState(sm);
+    SetupSetKitchenTimerState(sm);
+    SetupDisplayTimerState(sm);
 
-    display_clock = create_display_clock_state(sm);
-    set_cook_time = create_set_cook_time_state(sm);
-    set_power_level = create_set_power_level_state(sm);
-    display_timer = create_display_timer_state(sm);
+    //normal transitions between higher level states
 
-    display_clock->addTransition(this, SIGNAL(cook_time_sig()), set_cook_time);
-    set_cook_time->addTransition(this, SIGNAL(power_level_sig()), set_power_level);
-    set_power_level->addTransition(this, SIGNAL(cook_time_sig()), set_cook_time);
-    set_cook_time->addTransition(this, SIGNAL(start_sig()), display_timer);
-    set_power_level->addTransition(this, SIGNAL(start_sig()), display_timer);
-    display_timer->addTransition(this, SIGNAL(display_timer_done_sig()), display_clock);
+    //transitions from DisplayClock to the following need to be saved:
+    // - SetCookTimer
+    // - SetKitchenTimer
+    // - DisplayTimer
+    SetCookTimerTransition    = DisplayClock->addTransition(this, SIGNAL(cook_time_sig()), SetCookTimer);
+    SetKitchenTimerTransition = DisplayClock->addTransition(this, SIGNAL(kitchen_timer_sig()), SetKitchenTimer);
+    DisplayTimerTransition     = DisplayClock->addTransition(this, SIGNAL(start_sig()), DisplayTimer);
 
-    sm->setInitialState(display_clock);
+    SetCookTimer->addTransition(this, SIGNAL(power_level_sig()), SetPowerLevel);
+    SetCookTimer->addTransition(this, SIGNAL(stop_sig()), DisplayClock);
+    SetCookTimer->addTransition(this, SIGNAL(start_sig()), DisplayTimer);
+
+    SetPowerLevel->addTransition(this, SIGNAL(cook_time_sig()), SetCookTimer);
+    SetPowerLevel->addTransition(this, SIGNAL(stop_sig()), DisplayClock);
+    SetPowerLevel->addTransition(this, SIGNAL(start_sig()), DisplayTimer);
+
+    SetKitchenTimer->addTransition(this, SIGNAL(stop_sig()), DisplayClock);
+    SetKitchenTimer->addTransition(this, SIGNAL(start_sig()), DisplayTimer);
+
+    DisplayTimer->addTransition(this, SIGNAL(display_timer_done_sig()), DisplayClock);
+    DisplayTimer->addTransition(this, SIGNAL(stop_sig()), DisplayClock);
+
+    //state request resultant transitions
+    InitialState->addTransition(this, SIGNAL(state_req_display_clock()), DisplayClock);
+
+    InitialState->addTransition(this, SIGNAL(state_req_set_cook_timer()), SetCookTimer);
+    InitialState->addTransition(this, SIGNAL(state_req_set_power_level()), SetPowerLevel);
+    InitialState->addTransition(this, SIGNAL(state_req_display_timer()), DisplayTimer);
+
+    InitialState->addTransition(this, SIGNAL(state_req_clock_select_left_tens()), ClockSelectHourTens);
+    InitialState->addTransition(this, SIGNAL(state_req_clock_select_left_ones()), ClockSelectHourOnes);
+    InitialState->addTransition(this, SIGNAL(state_req_clock_select_right_tens()), ClockSelectMinuteTens);
+    InitialState->addTransition(this, SIGNAL(state_req_clock_select_right_ones()), ClockSelectMinuteOnes);
+
+    InitialState->addTransition(this, SIGNAL(state_req_kitchen_select_left_tens()), KitchenSelectMinuteTens);
+    InitialState->addTransition(this, SIGNAL(state_req_kitchen_select_left_ones()), KitchenSelectMinuteOnes);
+    InitialState->addTransition(this, SIGNAL(state_req_kitchen_select_right_tens()), KitchenSelectSecondTens);
+    InitialState->addTransition(this, SIGNAL(state_req_kitchen_select_right_ones()), KitchenSelectSecondOnes);
+
+    sm->setInitialState(InitialState);
     sm->start();
+
+    socket->connectToHost(server, DEV_RECV_PORT, QIODevice::ReadWrite);
 }
 
 Microwave::~Microwave()
 {
+    delete time;
+    delete txMessage;
     delete ui;
 }
 
-QState* Microwave::create_display_clock_state(QState *parent)
+void Microwave::SetupDisplayClockState(QState *parent)
 {
-    QState* display_clock {new QState(parent)};
-    QState* display_clock_init {new QState(display_clock)};
+    DisplayClock = new QState(parent);
+    DisplayClockInit = new QState(DisplayClock);
 
-    QState* set_clock {new QState(display_clock)};
-    QState* set_clock_init {new QState(set_clock)};
-    QState* select_hour_tens {new QState(set_clock)};
-    QState* select_hour_ones {new QState(set_clock)};
-    QState* select_minute_tens {new QState(set_clock)};
-    QState* select_minute_ones {new QState(set_clock)};
+    SetClock = new QState(DisplayClock);
+    SetClockInit = new QState(SetClock);
+    ClockSelectHourTens = new QState(SetClock);
+    ClockSelectHourOnes = new QState(SetClock);
+    ClockSelectMinuteTens = new QState(SetClock);
+    ClockSelectMinuteOnes = new QState(SetClock);
 
-    display_clock->setObjectName("display_clock");
-    display_clock_init->setObjectName("init");
-    set_clock->setObjectName("set_clock");
-    set_clock_init->setObjectName("set_clock_init");
-    select_hour_tens->setObjectName("select_hour_tens");
-    select_hour_ones->setObjectName("select_hour_ones");
-    select_minute_tens->setObjectName("select_minute_tens");
-    select_minute_ones->setObjectName("select_minute_ones");
+    DisplayClock->setObjectName("DisplayClock");
+    DisplayClockInit->setObjectName("DisplayClockInit");
+    SetClock->setObjectName("SetClock");
+    SetClockInit->setObjectName("SetClockInit");
+    ClockSelectHourTens->setObjectName("ClockSelectHourTens");
+    ClockSelectHourOnes->setObjectName("ClockSelectHourOnes");
+    ClockSelectMinuteTens->setObjectName("ClockSelectMinuteTens");
+    ClockSelectMinuteOnes->setObjectName("ClockSelectMinuteOnes");
 
     //display_clock
-    connect(display_clock, SIGNAL(entered()), this, SLOT(display_clock_entry()));
-    connect(display_clock, SIGNAL(entered()), this, SLOT(sendCurrentClockRequest()));
-    connect(display_clock, SIGNAL(exited()), this, SLOT(display_clock_exit()));
-    connect(this, SIGNAL(blink_sig()),
-            this, SLOT(blink_colon()));
-    display_clock_init->addTransition(this, SIGNAL(clock_sig()), set_clock);
+    connect(DisplayClock, SIGNAL(entered()), this, SLOT(DisplayClockInitEntry()));
+    connect(DisplayClock, SIGNAL(exited()), this, SLOT(DisplayClockInitExit()));
+    DisplayClockInit->addTransition(this, SIGNAL(clock_sig()), SetClock);
 
     //set_clock
-    connect(set_clock, SIGNAL(entered()), this, SLOT(set_clock_entry()));
-    connect(set_clock, SIGNAL(exited()), this, SLOT(set_clock_exit()));
-    set_clock->setInitialState(set_clock_init);
-    set_clock_init->addTransition(this, SIGNAL(select_left_tens_sig()), select_hour_tens);
+    connect(SetClock, SIGNAL(entered()), this, SLOT(SetClockEntry()));
+    connect(SetClock, SIGNAL(exited()), this, SLOT(SetClockExit()));
+    SetClock->setInitialState(SetClockInit);
+    SetClockInit->addTransition(this, SIGNAL(select_left_tens_sig()), ClockSelectHourTens);
 
     //select_hour_tens
-    connect(select_hour_tens, SIGNAL(entered()), this, SLOT(select_hour_tens_entry()));
-    connect(select_hour_tens, SIGNAL(entered()), blinkTimer, SLOT(start()));
-    connect(select_hour_tens, SIGNAL(exited()), blinkTimer, SLOT(stop()));
-    connect(select_hour_tens, SIGNAL(exited()), this, SLOT(displayTime()));
-    connect(select_hour_tens, SIGNAL(exited()), this, SLOT(select_hour_tens_exit()));
-    select_hour_tens->addTransition(this, SIGNAL(select_left_ones_sig()), select_hour_ones);
+    connect(ClockSelectHourTens, SIGNAL(entered()), this, SLOT(SelectLeftTensEntry()));
+    connect(ClockSelectHourTens, SIGNAL(exited()), this, SLOT(displayTime()));
+    connect(ClockSelectHourTens, SIGNAL(exited()), this, SLOT(SelectLeftTensExit()));
+    ClockSelectHourTens->addTransition(this, SIGNAL(select_left_ones_sig()), ClockSelectHourOnes);
 
     //select_hour_ones
-    connect(select_hour_ones, SIGNAL(entered()), this, SLOT(select_hour_ones_entry()));
-    connect(select_hour_ones, SIGNAL(entered()), blinkTimer, SLOT(start()));
-    connect(select_hour_ones, SIGNAL(exited()), blinkTimer, SLOT(stop()));
-    connect(select_hour_ones, SIGNAL(exited()), this, SLOT(displayTime()));
-    connect(select_hour_ones, SIGNAL(exited()), this, SLOT(select_hour_ones_exit()));
-    select_hour_ones->addTransition(this, SIGNAL(select_right_tens_sig()), select_minute_tens);
+    connect(ClockSelectHourOnes, SIGNAL(entered()), this, SLOT(SelectLeftOnesEntry()));
+    connect(ClockSelectHourOnes, SIGNAL(exited()), this, SLOT(displayTime()));
+    connect(ClockSelectHourOnes, SIGNAL(exited()), this, SLOT(SelectLeftOnesExit()));
+    ClockSelectHourOnes->addTransition(this, SIGNAL(select_right_tens_sig()), ClockSelectMinuteTens);
 
     //select_minute_tens
-    connect(select_minute_tens, SIGNAL(entered()), this, SLOT(select_minute_tens_entry()));
-    connect(select_minute_tens, SIGNAL(entered()), blinkTimer, SLOT(start()));
-    connect(select_minute_tens, SIGNAL(exited()), blinkTimer, SLOT(stop()));
-    connect(select_minute_tens, SIGNAL(exited()), this, SLOT(displayTime()));
-    connect(select_minute_tens, SIGNAL(exited()), this, SLOT(select_minute_tens_exit()));
-    select_minute_tens->addTransition(this, SIGNAL(select_right_ones_sig()), select_minute_ones);
+    connect(ClockSelectMinuteTens, SIGNAL(entered()), this, SLOT(SelectRightTensEntry()));
+    connect(ClockSelectMinuteTens, SIGNAL(exited()), this, SLOT(displayTime()));
+    connect(ClockSelectMinuteTens, SIGNAL(exited()), this, SLOT(SelectRightTensExit()));
+    ClockSelectMinuteTens->addTransition(this, SIGNAL(select_right_ones_sig()), ClockSelectMinuteOnes);
 
     //select_minute_ones
-    connect(select_minute_ones, SIGNAL(entered()), this, SLOT(select_minute_ones_entry()));
-    connect(select_minute_ones, SIGNAL(entered()), blinkTimer, SLOT(start()));
-    connect(select_minute_ones, SIGNAL(exited()), blinkTimer, SLOT(stop()));
-    connect(select_minute_ones, SIGNAL(exited()), this, SLOT(displayTime()));
-    connect(select_minute_ones, SIGNAL(exited()), this, SLOT(select_minute_ones_exit()));
-    select_minute_ones->addTransition(this, SIGNAL(select_left_tens_sig()), select_hour_tens);
+    connect(ClockSelectMinuteOnes, SIGNAL(entered()), this, SLOT(SelectRightOnesEntry()));
+    connect(ClockSelectMinuteOnes, SIGNAL(exited()), this, SLOT(displayTime()));
+    connect(ClockSelectMinuteOnes, SIGNAL(exited()), this, SLOT(SelectRightOnesExit()));
+    ClockSelectMinuteOnes->addTransition(this, SIGNAL(select_left_tens_sig()), ClockSelectHourTens);
 
     //transitions to finish exit set_clock
-    set_clock->addTransition(this, SIGNAL(clock_done_sig()), display_clock);
+    SetClock->addTransition(this, SIGNAL(clock_done_sig()), DisplayClock);
 
-    display_clock->setInitialState(display_clock_init);
-    return display_clock;
+    DisplayClock->setInitialState(DisplayClockInit);
 }
 
-QState* Microwave::create_set_cook_time_state(QState *parent)
+void Microwave::SetupSetCookTimerState(QState *parent)
 {
-    QState* set_cook_time {new QState(parent)};
-    QState* cook_timer_initial {new QState(set_cook_time)};
+    SetCookTimer = new QState(parent);
+    SetCookTimerInit = new QState(SetCookTimer);
 
-    set_cook_time->setObjectName("set_cook_time");
-    cook_timer_initial->setObjectName("cook_timer_initial");
+    SetCookTimer->setObjectName("SetCookTimer");
+    SetCookTimerInit->setObjectName("SetCookTimerInit");
 
-    connect(set_cook_time, SIGNAL(entered()), this, SLOT(set_cook_time_entry()));
-    connect(set_cook_time, SIGNAL(exited()), this, SLOT(set_cook_time_exit()));
+    connect(SetCookTimer, SIGNAL(entered()), this, SLOT(SetCookTimerEntry()));
+    connect(SetCookTimer, SIGNAL(exited()), this, SLOT(SetCookTimerExit()));
 
-    set_cook_time->setInitialState(cook_timer_initial);
-    return set_cook_time;
+    SetCookTimer->setInitialState(SetCookTimerInit);
 }
 
-QState* Microwave::create_set_power_level_state(QState *parent)
+void Microwave::SetupSetPowerLevelState(QState *parent)
 {
-    QState* set_power_level {new QState(parent)};
-    QState* set_power_level_initial {new QState(set_power_level)};
+    SetPowerLevel = new QState(parent);
+    SetPowerLevelInit = new QState(SetPowerLevel);
 
-    set_power_level->setObjectName("set_power_level");
-    set_power_level_initial->setObjectName("set_power_level_initial");
+    SetPowerLevel->setObjectName("SetPowerLevel");
+    SetPowerLevelInit->setObjectName("SetPowerLevelInit");
 
-    connect(set_power_level, SIGNAL(entered()), this, SLOT(set_power_level_entry()));
-    connect(set_power_level, SIGNAL(exited()), this, SLOT(set_power_level_exit()));
-    set_power_level->setInitialState(set_power_level_initial);
-    return set_power_level;
+    connect(SetPowerLevel, SIGNAL(entered()), this, SLOT(SetPowerLevelEntry()));
+    connect(SetPowerLevel, SIGNAL(exited()), this, SLOT(SetPowerLevelExit()));
+    SetPowerLevel->setInitialState(SetPowerLevelInit);
 }
 
-QState* Microwave::create_set_kitchen_timer_state(QState *parent)
+void Microwave::SetupSetKitchenTimerState(QState *parent)
 {
-    Q_UNUSED(parent)
-    return new QState();
+    SetKitchenTimer = new QState(parent);
+    SetKitchenTimerInit = new QState(SetKitchenTimer);
+    KitchenSelectMinuteTens = new QState(SetKitchenTimer);
+    KitchenSelectMinuteOnes = new QState(SetKitchenTimer);
+    KitchenSelectSecondTens = new QState(SetKitchenTimer);
+    KitchenSelectSecondOnes = new QState(SetKitchenTimer);
+
+    SetKitchenTimer->setObjectName("SetKitchenTimer");
+    SetKitchenTimerInit->setObjectName("SetKitchenTimerInit");
+    KitchenSelectMinuteTens->setObjectName("KitchenSelectMinuteTens");
+    KitchenSelectMinuteOnes->setObjectName("KitchenSelectMinuteOnes");
+    KitchenSelectSecondTens->setObjectName("KitchenSelectSecondTens");
+    KitchenSelectSecondOnes->setObjectName("KitchenSelectSecondOnes");
+
+    SetKitchenTimerInit->addTransition(this, SIGNAL(select_left_tens_sig()), KitchenSelectMinuteTens);
+
+    connect(KitchenSelectMinuteTens, SIGNAL(entered()), this, SLOT(SelectLeftTensEntry()));
+    connect(KitchenSelectMinuteTens, SIGNAL(exited()), this, SLOT(SelectLeftTensExit()));
+    KitchenSelectMinuteTens->addTransition(this, SIGNAL(select_left_ones_sig()), KitchenSelectMinuteOnes);
+
+    connect(KitchenSelectMinuteOnes, SIGNAL(entered()), this, SLOT(SelectLeftOnesEntry()));
+    connect(KitchenSelectMinuteOnes, SIGNAL(exited()), this, SLOT(SelectLeftOnesExit()));
+    KitchenSelectMinuteOnes->addTransition(this, SIGNAL(select_left_ones_sig()), KitchenSelectSecondTens);
+
+    connect(KitchenSelectSecondTens, SIGNAL(entered()), this, SLOT(SelectRightTensEntry()));
+    connect(KitchenSelectSecondTens, SIGNAL(exited()), this, SLOT(SelectRightTensExit()));
+    KitchenSelectSecondTens->addTransition(this, SIGNAL(select_left_ones_sig()), KitchenSelectSecondOnes);
+
+    connect(KitchenSelectSecondOnes, SIGNAL(entered()), this, SLOT(SelectRightOnesEntry()));
+    connect(KitchenSelectSecondOnes, SIGNAL(exited()), this, SLOT(SelectRightOnesExit()));
+    KitchenSelectSecondOnes->addTransition(this, SIGNAL(select_left_ones_sig()), KitchenSelectMinuteTens);
+
+    SetKitchenTimer->setInitialState(SetKitchenTimerInit);
 }
 
-QState* Microwave::create_display_timer_state(QState *parent)
+void Microwave::SetupDisplayTimerState(QState *parent)
 {
-    QState* display_timer {new QState(parent)};
-    QState* display_timer_running {new QState(display_timer)};
-    QState* display_timer_paused {new QState(display_timer)};
+    DisplayTimer = new QState(parent);
+    DisplayTimerInit = new QState(DisplayTimer);
 
-    connect(display_timer, SIGNAL(entered()), this, SLOT(display_timer_entry()));
-    connect(display_timer, SIGNAL(exited()), this, SLOT(display_timer_exit()));
+    DisplayTimer->setObjectName("DisplayTimer");
+    DisplayTimerInit->setObjectName("DisplayTimerInit");
 
-    display_timer_running->addTransition(this, SIGNAL(stop_sig()), display_timer_paused);
-    display_timer_paused->addTransition(this, SIGNAL(start_sig()), display_timer_running);
-    display_timer->setInitialState(display_timer_running);
-    return display_timer;
+    connect(DisplayTimer, SIGNAL(entered()), this, SLOT(DisplayTimerInitEntry()));
+    connect(DisplayTimer, SIGNAL(exited()), this, SLOT(DisplayTimerInitExit()));
+
+    DisplayTimer->setInitialState(DisplayTimerInit);
 }
 
-void Microwave::display_clock_entry()
+void Microwave::InitialStateEntry()
+{
+    connect(stateRequestTimer, SIGNAL(timeout()), this, SLOT(onStateRequestTimeout()));
+    stateRequestTimer->setInterval(500); // half second
+    stateRequestTimer->setSingleShot(false);
+    stateRequestTimer->start();
+}
+
+void Microwave::InitialStateExit()
+{
+    stateRequestTimer->stop();
+}
+
+void Microwave::DisplayClockInitEntry()
 {
     qDebug() << "entered display_clock";
-    connect(this, SIGNAL(blink_sig()), this, SLOT(blink_colon()));
+    connect(this, SIGNAL(blink_on_sig()), this, SLOT(blink_colon(true)));
+    connect(this, SIGNAL(blink_off_sig()), this, SLOT(blink_colon(false)));
 }
 
-void Microwave::display_clock_exit()
+void Microwave::DisplayClockInitExit()
 {
     qDebug() << "left display_clock";
-    connect(this, SIGNAL(blink_sig()), this, SLOT(blink_colon()));
+    disconnect(this, SIGNAL(blink_on_sig()), this, SLOT(blink_colon()));
+    disconnect(this, SIGNAL(blink_off_sig()), this, SLOT(blink_colon()));
 }
 
-void Microwave::set_clock_entry()
+void Microwave::SetClockEntry()
 {
     qDebug() << "entered set_clock";
-    if(!setting_clock) {
-        connect(this, SIGNAL(clock_sig()), this, SLOT(accept_clock()));
-        connect(this, SIGNAL(stop_sig()), this, SLOT(decline_clock()));
-        setting_clock = true;
-    }
+
+    connect(this, SIGNAL(clock_sig()), this, SLOT(clock_done()));
+    connect(this, SIGNAL(stop_sig()), this, SLOT(clock_done()));
+
+    DisplayClock->removeTransition(dynamic_cast<QAbstractTransition*>(SetCookTimerTransition));
+    DisplayClock->removeTransition(dynamic_cast<QAbstractTransition*>(SetKitchenTimerTransition));
+    DisplayClock->removeTransition(dynamic_cast<QAbstractTransition*>(DisplayTimerTransition));
 }
 
-void Microwave::set_clock_exit()
+void Microwave::SetClockExit()
 {
     qDebug() << "left set_clock";
-    if(!setting_clock) {
-        disconnect(this, SIGNAL(clock_sig()), this, SLOT(accept_clock()));
-        disconnect(this, SIGNAL(stop_sig()), this, SLOT(decline_clock()));
-    }
+
+    disconnect(this, SIGNAL(clock_sig()), this, SLOT(clock_done()));
+    disconnect(this, SIGNAL(stop_sig()), this, SLOT(clock_done()));
+
+    DisplayClock->addTransition(dynamic_cast<QAbstractTransition*>(SetCookTimerTransition));
+    DisplayClock->addTransition(dynamic_cast<QAbstractTransition*>(SetKitchenTimerTransition));
+    DisplayClock->addTransition(dynamic_cast<QAbstractTransition*>(DisplayTimerTransition));
 }
 
-void Microwave::select_hour_tens_entry()
+void Microwave::SelectLeftTensEntry()
 {
     qDebug() << "entered select_hour_tens";
-    connect(blinkTimer, SIGNAL(timeout()), this, SLOT(blink_left_tens()));
+    connect(this, SIGNAL(blink_on_sig()), this, SLOT(blink_left_tens(true)));
+    connect(this, SIGNAL(blink_off_sig()), this, SLOT(blink_left_tens(false)));
 }
 
-void Microwave::select_hour_tens_exit()
+void Microwave::SelectLeftTensExit()
 {
     qDebug() << "left select_hour_tens";
-    disconnect(blinkTimer, SIGNAL(timeout()), this, SLOT(blink_left_tens()));
+    disconnect(this, SIGNAL(blink_on_sig()), this, SLOT(blink_left_tens()));
+    disconnect(this, SIGNAL(blink_off_sig()), this, SLOT(blink_left_tens()));
 }
 
-void Microwave::select_hour_ones_entry()
+void Microwave::SelectLeftOnesEntry()
 {
     qDebug() << "entered select_hour_ones";
-    connect(blinkTimer, SIGNAL(timeout()), this, SLOT(blink_left_ones()));
+    connect(this, SIGNAL(blink_on_sig()), this, SLOT(blink_left_ones(true)));
+    connect(this, SIGNAL(blink_off_sig()), this, SLOT(blink_left_ones(false)));
 }
 
-void Microwave::select_hour_ones_exit()
+void Microwave::SelectLeftOnesExit()
 {
     qDebug() << "left select_hour_ones";
-    disconnect(blinkTimer, SIGNAL(timeout()), this, SLOT(blink_left_ones()));
+    disconnect(this, SIGNAL(blink_on_sig()), this, SLOT(blink_left_ones()));
+    disconnect(this, SIGNAL(blink_off_sig()), this, SLOT(blink_left_ones()));
 }
 
-void Microwave::select_minute_tens_entry()
+void Microwave::SelectRightTensEntry()
 {
     qDebug() << "entered select_minute_tens";
-    connect(blinkTimer, SIGNAL(timeout()), this, SLOT(blink_right_tens()));
+    connect(this, SIGNAL(blink_on_sig()), this, SLOT(blink_right_tens(true)));
+    connect(this, SIGNAL(blink_off_sig()), this, SLOT(blink_right_tens(false)));
 }
 
-void Microwave::select_minute_tens_exit()
+void Microwave::SelectRightTensExit()
 {
     qDebug() << "left select_minute_tens";
-    disconnect(blinkTimer, SIGNAL(timeout()), this, SLOT(blink_right_tens()));
+    disconnect(this, SIGNAL(blink_on_sig()), this, SLOT(blink_right_tens()));
+    disconnect(this, SIGNAL(blink_off_sig()), this, SLOT(blink_right_tens()));
 }
 
-void Microwave::select_minute_ones_entry()
+void Microwave::SelectRightOnesEntry()
 {
     qDebug() << "entered select_minute_ones";
-    connect(blinkTimer, SIGNAL(timeout()), this, SLOT(blink_right_ones()));
+    connect(this, SIGNAL(blink_on_sig()), this, SLOT(blink_right_ones(true)));
+    connect(this, SIGNAL(blink_off_sig()), this, SLOT(blink_right_ones(false)));
 }
 
-void Microwave::select_minute_ones_exit()
+void Microwave::SelectRightOnesExit()
 {
     qDebug() << "left select_minute_ones";
-    disconnect(blinkTimer, SIGNAL(timeout()), this, SLOT(blink_right_ones()));
+    disconnect(this, SIGNAL(blink_on_sig()), this, SLOT(blink_right_ones(true)));
+    disconnect(this, SIGNAL(blink_off_sig()), this, SLOT(blink_right_ones(false)));
 }
 
-void Microwave::set_cook_time_entry()
+void Microwave::SetCookTimerEntry()
 {
     qDebug() << "entered set_cook_time";
 }
 
-void Microwave::set_cook_time_exit()
+void Microwave::SetCookTimerExit()
 {
     qDebug() << "left set_cook_time";
 }
 
-void Microwave::set_power_level_entry()
+void Microwave::SetPowerLevelEntry()
 {
     qDebug() << "entered set_power_level";
 }
 
-void Microwave::set_power_level_exit()
+void Microwave::SetPowerLevelExit()
 {
     qDebug() << "left set_power_level";
 }
 
-void Microwave::display_timer_entry()
+void Microwave::DisplayTimerInitEntry()
 {
     qDebug() << "entered display_timer";
+    connect(this, SIGNAL(clock_sig()), this, SIGNAL(display_timer_done_sig()));
 }
 
-void Microwave::display_timer_exit()
+void Microwave::DisplayTimerInitExit()
 {
     qDebug() << "left display_timer";
+    disconnect(this, SIGNAL(clock_sig()), this, SIGNAL(display_timer_done_sig()));
 }
 
-void Microwave::readDatagram()
+void Microwave::onTcpConnect()
+{
+    qDebug() << "socket connected";
+    connect(socket, SIGNAL(readyRead()), this, SLOT(onReadyRead()));
+    connect(socket, SIGNAL(bytesWritten(qint64)), this, SLOT(onBytesWritten(qint64)));
+}
+
+void Microwave::onTcpDisconnect()
+{
+    qDebug() << "socket disconnected";
+    disconnect(socket, SIGNAL(readyRead()), this, SLOT(onReadyRead()));
+    disconnect(socket, SIGNAL(bytesWritten(qint64)), this, SLOT(onBytesWritten(qint64)));
+}
+
+void Microwave::onReadyRead()
 {
     using namespace MicrowaveMsgFormat;
-    while(inSocket->hasPendingDatagrams()) {
-        QNetworkDatagram datagram {inSocket->receiveDatagram()};
-        QByteArray rbuf {datagram.data()};
+    static const qint32 MessageSize = sizeof(Message);
 
-        Message rxMsg(rbuf.data());
+    rxBuf.append(socket->readAll());
 
-        if(Destination::APP != rxMsg.dst) {
-            return;
+    //handle received data
+    while(rxBuf.size() >= MessageSize) {
+        memcpy(rxMessage, rxBuf.data(), MessageSize);
+
+        if(Destination::APP != rxMessage->dst) {
+            break;
         }
 
-        Type type = static_cast<Type>(static_cast<uint32_t>(rxMsg.state) >> 24);
+        Type type = static_cast<Type>(static_cast<uint32_t>(rxMessage->state) >> 24);
 
         switch(type) {
         case Type::STATE:
-            handleState(rxMsg);
+            handleState(*rxMessage);
             break;
         case Type::SIGNAL:
-            handleSignal(rxMsg);
+            handleSignal(*rxMessage);
             break;
         case Type::UPDATE:
-            handleUpdate(rxMsg);
+            handleUpdate(*rxMessage);
             break;
         }
+
+        //remove used data
+        rxBuf = rxBuf.right(rxBuf.size() - MessageSize);
     }
+}
+
+void Microwave::onBytesWritten(qint64 bytes)
+{
+    qDebug() << bytes << "written to" << socket->peerAddress();
 }
 
 void Microwave::handleState(const MicrowaveMsgFormat::Message &msg)
 {
     using namespace MicrowaveMsgFormat;
     switch(msg.state) {
-    case State::DISPLAY_CLOCK:
-        break;
-    case State::SET_CLOCK:
-        break;
     case State::CLOCK_SELECT_HOUR_TENS:
+        emit state_req_clock_select_left_tens();
         break;
     case State::CLOCK_SELECT_HOUR_ONES:
+        emit state_req_clock_select_left_ones();
         break;
     case State::CLOCK_SELECT_MINUTE_TENS:
+        emit state_req_clock_select_right_tens();
         break;
     case State::CLOCK_SELECT_MINUTE_ONES:
+        emit state_req_clock_select_right_ones();
         break;
-    case State::SET_COOK_TIME:
+    case State::SET_COOK_TIMER:
+        emit state_req_set_cook_timer();
         break;
     case State::SET_POWER_LEVEL:
-        break;
-    case State::SET_KITCHEN_TIMER:
+        emit state_req_set_power_level();
         break;
     case State::KITCHEN_SELECT_HOUR_TENS:
+        emit state_req_kitchen_select_left_tens();
         break;
     case State::KITCHEN_SELECT_HOUR_ONES:
+        emit state_req_kitchen_select_left_ones();
         break;
     case State::KITCHEN_SELECT_MINUTE_TENS:
+        emit state_req_kitchen_select_right_tens();
         break;
     case State::KITCHEN_SELECT_MINUTE_ONES:
+        emit state_req_kitchen_select_right_ones();
         break;
     case State::DISPLAY_TIMER:
-        break;
-    case State::DISPLAY_TIMER_RUNNING:
-        break;
-    case State::DISPLAY_TIMER_PAUSED:
+        emit state_req_display_timer();
         break;
     case State::NONE:
+    case State::DISPLAY_CLOCK:
         break;
     }
 }
@@ -457,8 +536,11 @@ void Microwave::handleSignal(const MicrowaveMsgFormat::Message &msg)
     case Signal::START:
         emit start_sig();
         break;
-    case Signal::BLINK:
-        emit blink_sig();
+    case Signal::BLINK_ON:
+        emit blink_on_sig();
+        break;
+    case Signal::BLINK_OFF:
+        emit blink_off_sig();
         break;
     case Signal::MOD_LEFT_TENS:
         emit select_left_tens_sig();
@@ -472,7 +554,6 @@ void Microwave::handleSignal(const MicrowaveMsgFormat::Message &msg)
     case Signal::MOD_RIGHT_ONES:
         emit select_right_ones_sig();
         break;
-    case Signal::NONE:
     default:
         break;
     }
@@ -496,129 +577,131 @@ void Microwave::handleUpdate(const MicrowaveMsgFormat::Message &msg)
     }
 }
 
-void Microwave::writeData(const MicrowaveMsgFormat::Message* const msg)
+void Microwave::writeData()
 {
-    memcpy(buf.data(), msg, sizeof(MicrowaveMsgFormat::Message));
-    outSocket->writeDatagram(buf.data(), sizeof(MicrowaveMsgFormat::Message), local, SIM_RECV_PORT);
+    txBuf.append(reinterpret_cast<char*>(txMessage), sizeof(MicrowaveMsgFormat::Message));
+    if(socket->state() == QAbstractSocket::ConnectedState) {
+        const qint64 count {socket->write(txBuf)};
+        if(-1 == count) {
+            qDebug() << "Error occurred while writing data";
+        }
+    }
+    txBuf.clear();
 }
 void Microwave::sendTimeCook()
 {
     qDebug() << "time cook";
-    msg->signal = MicrowaveMsgFormat::Signal::COOK_TIME;
-    writeData(msg);
+    txMessage->signal = MicrowaveMsgFormat::Signal::COOK_TIME;
+    writeData();
 }
 
 void Microwave::sendPowerLevel()
 {
     qDebug() << "power level";
-    msg->signal = MicrowaveMsgFormat::Signal::POWER_LEVEL;
-    writeData(msg);
+    txMessage->signal = MicrowaveMsgFormat::Signal::POWER_LEVEL;
+    writeData();
 }
 
 void Microwave::sendKitchenTimer()
 {
     qDebug() << "kitchen timer";
-    msg->signal = MicrowaveMsgFormat::Signal::KITCHEN_TIMER;
-    writeData(msg);
+    txMessage->signal = MicrowaveMsgFormat::Signal::KITCHEN_TIMER;
+    writeData();
 }
 
 void Microwave::sendClock()
 {
     qDebug() << "clock";
-    msg->signal = MicrowaveMsgFormat::Signal::CLOCK;
-    writeData(msg);
+    txMessage->signal = MicrowaveMsgFormat::Signal::CLOCK;
+    writeData();
 }
 
 void Microwave::send0()
 {
-    msg->signal = MicrowaveMsgFormat::Signal::DIGIT_0;
-    writeData(msg);
+    txMessage->signal = MicrowaveMsgFormat::Signal::DIGIT_0;
+    writeData();
 }
 
 void Microwave::send1()
 {
-    msg->signal = MicrowaveMsgFormat::Signal::DIGIT_1;
-    writeData(msg);
+    txMessage->signal = MicrowaveMsgFormat::Signal::DIGIT_1;
+    writeData();
 }
 
 void Microwave::send2()
 {
-    msg->signal = MicrowaveMsgFormat::Signal::DIGIT_2;
-    writeData(msg);
+    txMessage->signal = MicrowaveMsgFormat::Signal::DIGIT_2;
+    writeData();
 }
 
 void Microwave::send3()
 {
-    msg->signal = MicrowaveMsgFormat::Signal::DIGIT_3;
-    writeData(msg);
+    txMessage->signal = MicrowaveMsgFormat::Signal::DIGIT_3;
+    writeData();
 }
 
 void Microwave::send4()
 {
-    msg->signal = MicrowaveMsgFormat::Signal::DIGIT_4;
-    writeData(msg);
+    txMessage->signal = MicrowaveMsgFormat::Signal::DIGIT_4;
+    writeData();
 }
 
 void Microwave::send5()
 {
-    msg->signal = MicrowaveMsgFormat::Signal::DIGIT_5;
-    writeData(msg);
+    txMessage->signal = MicrowaveMsgFormat::Signal::DIGIT_5;
+    writeData();
 }
 
 void Microwave::send6()
 {
-    msg->signal = MicrowaveMsgFormat::Signal::DIGIT_6;
-    writeData(msg);
+    txMessage->signal = MicrowaveMsgFormat::Signal::DIGIT_6;
+    writeData();
 }
 
 void Microwave::send7()
 {
-    msg->signal = MicrowaveMsgFormat::Signal::DIGIT_7;
-    writeData(msg);
+    txMessage->signal = MicrowaveMsgFormat::Signal::DIGIT_7;
+    writeData();
 }
 
 void Microwave::send8()
 {
-    msg->signal = MicrowaveMsgFormat::Signal::DIGIT_8;
-    writeData(msg);
+    txMessage->signal = MicrowaveMsgFormat::Signal::DIGIT_8;
+    writeData();
 }
 
 void Microwave::send9()
 {
-    msg->signal = MicrowaveMsgFormat::Signal::DIGIT_9;
-    writeData(msg);
+    txMessage->signal = MicrowaveMsgFormat::Signal::DIGIT_9;
+    writeData();
 }
 
 void Microwave::sendStop()
 {
-    msg->signal = MicrowaveMsgFormat::Signal::STOP;
-    writeData(msg);
+    txMessage->signal = MicrowaveMsgFormat::Signal::STOP;
+    writeData();
 }
 
 void Microwave::sendStart()
 {
-    msg->signal = MicrowaveMsgFormat::Signal::START;
-    writeData(msg);
+    txMessage->signal = MicrowaveMsgFormat::Signal::START;
+    writeData();
 }
 
-void Microwave::sendCurrentClockRequest()
+void Microwave::SendStateRequest()
 {
-    Command cmd {Command::CURRENT_CLOCK};
-    memcpy(buf.data(), &cmd, sizeof(cmd));
-
-    outSocket->writeDatagram(buf.data(), sizeof(cmd), local, SIM_RECV_PORT);
+    txMessage->signal = MicrowaveMsgFormat::Signal::STATE_REQUEST;
+    writeData();
 }
 
 void Microwave::displayTime()
 {
-    ui->left_tens->setText(QString::number(time.left_tens));
-    ui->left_ones->setText(QString::number(time.left_ones));
-    ui->right_tens->setText(QString::number(time.right_tens));
-    ui->right_ones->setText(QString::number(time.right_ones));
-    blinkage = true;
+    ui->left_tens->setText(QString::number(time->left_tens));
+    ui->left_ones->setText(QString::number(time->left_ones));
+    ui->right_tens->setText(QString::number(time->right_tens));
+    ui->right_ones->setText(QString::number(time->right_ones));
 
     ui->colon->setText(":");
-    colon_blink = true;
 }
 
 void Microwave::displayPowerLevel()
@@ -631,45 +714,38 @@ void Microwave::displayPowerLevel()
     ui->colon->setText("");
 }
 
-void Microwave::blink_colon()
+void Microwave::blink_colon(const bool flag)
 {
-    ui->colon->setText(colon_blink ? "" : ":");
-    colon_blink = !colon_blink;
+    ui->colon->setText(flag ? ":" : "");
 }
 
-void Microwave::blink_left_tens()
+void Microwave::blink_left_tens(const bool flag)
 {
-    ui->left_tens->setText(blinkage ? "" : QString::number(time.left_tens));
-    blinkage = !blinkage;
+    ui->left_tens->setText(flag ? QString::number(time->left_tens) : "");
 }
 
-void Microwave::blink_left_ones()
+void Microwave::blink_left_ones(const bool flag)
 {
-    ui->left_ones->setText(blinkage ? "" : QString::number(time.left_ones));
-    blinkage = !blinkage;
+    ui->left_ones->setText(flag ? QString::number(time->left_ones) : "");
 }
 
-void Microwave::blink_right_tens()
+void Microwave::blink_right_tens(const bool flag)
 {
-    ui->right_tens->setText(blinkage ? "" : QString::number(time.right_tens));
-    blinkage = !blinkage;
+    ui->right_tens->setText(flag ? QString::number(time->right_tens) : "");
 }
 
-void Microwave::blink_right_ones()
+void Microwave::blink_right_ones(const bool flag)
 {
-    ui->right_ones->setText(blinkage ? "" : QString::number(time.right_ones));
-    blinkage = !blinkage;
+    ui->right_ones->setText(flag ? QString::number(time->right_ones) : "");
 }
 
-void Microwave::accept_clock()
+void Microwave::clock_done()
 {
-    setting_clock = false;
     emit clock_done_sig();
 }
 
-void Microwave::decline_clock()
+void Microwave::onStateRequestTimeout()
 {
-    setting_clock = false;
-    emit clock_done_sig();
+    SendStateRequest();
 }
 

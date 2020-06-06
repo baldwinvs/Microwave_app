@@ -2,14 +2,19 @@
 #define MICROWAVE_H
 
 #include <QMainWindow>
+#include <QByteArray>
 
 //forward declarations
-class QUdpSocket;
+class QTcpSocket;
 class QStateMachine;
+class QSignalTransition;
 class QState;
 class QTimer;
 
-namespace MicrowaveMsgFormat { class Message; }
+namespace MicrowaveMsgFormat {
+class Time;
+class Message;
+}
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class Microwave; }
@@ -23,82 +28,95 @@ public:
     Microwave(QWidget *parent = nullptr);
     ~Microwave();
 
-    class Time
-    {
-    public:
-        inline Time()
-            : left_tens{},
-              left_ones{},
-              right_tens{},
-              right_ones{}
-        {}
-
-        quint32 left_tens;
-        quint32 left_ones;
-        quint32 right_tens;
-        quint32 right_ones;
-    };
-
-    enum class MOD_STATE : uint32_t {
-        NONE,
-        SET_CLOCK,
-        SET_COOK,
-        SET_POWER,
-        SET_KITCHEN
-    };
-
 signals:
+    //signals mapped to rx Signal from the dev board
     void clock_sig();
     void cook_time_sig();
     void power_level_sig();
     void kitchen_timer_sig();
-    void next_digit_sig();
-    void clock_done_sig();
     void stop_sig();
     void start_sig();
+    void blink_on_sig();
+    void blink_off_sig();
     void select_left_tens_sig();
     void select_left_ones_sig();
     void select_right_tens_sig();
     void select_right_ones_sig();
+
+    //signals generated from the response of the STATE_REQUEST tx signal
+    void state_req_display_clock();
+    void state_req_clock_select_left_tens();
+    void state_req_clock_select_left_ones();
+    void state_req_clock_select_right_tens();
+    void state_req_clock_select_right_ones();
+    void state_req_set_cook_timer();
+    void state_req_set_power_level();
+    void state_req_kitchen_select_left_tens();
+    void state_req_kitchen_select_left_ones();
+    void state_req_kitchen_select_right_tens();
+    void state_req_kitchen_select_right_ones();
+    void state_req_display_timer();
+
+    //signals that result from handling other signals
+    void clock_done_sig();
     void display_timer_done_sig();
-    void blink_sig();
 
 private:
     Ui::Microwave *ui;
-    QUdpSocket* inSocket;
-    QUdpSocket* outSocket;
-    QTimer* blinkTimer;
-    QTimer* colonBlinkTimer;
-    MicrowaveMsgFormat::Message* msg;
+    QTcpSocket* socket;
+    QByteArray txBuf;
+    QByteArray rxBuf;
+    QTimer* stateRequestTimer;
 
-    Time time;
+    MicrowaveMsgFormat::Message* txMessage;
+    MicrowaveMsgFormat::Message* rxMessage;
+    MicrowaveMsgFormat::Time* time;
     quint32 powerLevel;
-    bool blinkage;
-    bool colon_blink;
-    bool setting_clock;
-    MOD_STATE currentModState;
 
     QStateMachine* sm;
-    QState* display_clock;
-    QState* set_cook_time;
-    QState* set_power_level;
-    QState* set_kitchen_timer;
-    QState* display_timer;
+    QState* InitialState;
+    QState* DisplayClock;
+      QState* DisplayClockInit;
+      QState* SetClock;
+        QState* SetClockInit;
+        QState* ClockSelectHourTens;
+        QState* ClockSelectHourOnes;
+        QState* ClockSelectMinuteTens;
+        QState* ClockSelectMinuteOnes;
+    QState* SetCookTimer;
+      QState* SetCookTimerInit;
+    QState* SetPowerLevel;
+      QState* SetPowerLevelInit;
+    QState* SetKitchenTimer;
+      QState* SetKitchenTimerInit;
+      QState* KitchenSelectMinuteTens;
+      QState* KitchenSelectMinuteOnes;
+      QState* KitchenSelectSecondTens;
+      QState* KitchenSelectSecondOnes;
+    QState* DisplayTimer;
+      QState* DisplayTimerInit;
 
-    QState* create_display_clock_state(QState* parent = Q_NULLPTR);
-    QState* create_set_cook_time_state(QState* parent = Q_NULLPTR);
-    QState* create_set_power_level_state(QState* parent = Q_NULLPTR);
-    QState* create_set_kitchen_timer_state(QState* parent = Q_NULLPTR);
-    QState* create_display_timer_state(QState* parent = Q_NULLPTR);
+    QSignalTransition* SetCookTimerTransition;
+    QSignalTransition* SetKitchenTimerTransition;
+    QSignalTransition* DisplayTimerTransition;
 
-    void handleState(const MicrowaveMsgFormat::Message& msg);
-    void handleSignal(const MicrowaveMsgFormat::Message& msg);
-    void handleUpdate(const MicrowaveMsgFormat::Message& msg);
+    void SetupDisplayClockState(QState* parent = Q_NULLPTR);
+    void SetupSetCookTimerState(QState* parent = Q_NULLPTR);
+    void SetupSetPowerLevelState(QState* parent = Q_NULLPTR);
+    void SetupSetKitchenTimerState(QState* parent = Q_NULLPTR);
+    void SetupDisplayTimerState(QState* parent = Q_NULLPTR);
 
-    void writeData(const MicrowaveMsgFormat::Message* const msg);
+    void handleState(const MicrowaveMsgFormat::Message& txMessage);
+    void handleSignal(const MicrowaveMsgFormat::Message& txMessage);
+    void handleUpdate(const MicrowaveMsgFormat::Message& txMessage);
+
+    void writeData();
 
 private slots:
-    void readDatagram();
+    void onTcpConnect();
+    void onTcpDisconnect();
+    void onReadyRead();
+    void onBytesWritten(qint64 bytes5);
 
     void sendTimeCook();
     void sendPowerLevel();
@@ -116,46 +134,50 @@ private slots:
     void send9();
     void sendStop();
     void sendStart();
-    void sendCurrentClockRequest();
+    void SendStateRequest();
 
     void displayTime();
     void displayPowerLevel();
 
-    void blink_colon();
+    void onStateRequestTimeout();
 
-    void blink_left_tens();
-    void blink_left_ones();
-    void blink_right_tens();
-    void blink_right_ones();
+    //slots for blinking stuff
+    void blink_colon(const bool flag);
+    void blink_left_tens(const bool flag);
+    void blink_left_ones(const bool flag);
+    void blink_right_tens(const bool flag);
+    void blink_right_ones(const bool flag);
 
-    void accept_clock();
-    void decline_clock();
+    void clock_done();
 
-    void display_clock_entry();
-    void display_clock_exit();
+    void InitialStateEntry();
+    void InitialStateExit();
 
-    void set_clock_entry();
-    void set_clock_exit();
+    void DisplayClockInitEntry();
+    void DisplayClockInitExit();
 
-    void select_hour_tens_entry();
-    void select_hour_tens_exit();
+    void SetClockEntry();
+    void SetClockExit();
 
-    void select_hour_ones_entry();
-    void select_hour_ones_exit();
+    void SelectLeftTensEntry();
+    void SelectLeftTensExit();
 
-    void select_minute_tens_entry();
-    void select_minute_tens_exit();
+    void SelectLeftOnesEntry();
+    void SelectLeftOnesExit();
 
-    void select_minute_ones_entry();
-    void select_minute_ones_exit();
+    void SelectRightTensEntry();
+    void SelectRightTensExit();
 
-    void set_cook_time_entry();
-    void set_cook_time_exit();
+    void SelectRightOnesEntry();
+    void SelectRightOnesExit();
 
-    void set_power_level_entry();
-    void set_power_level_exit();
+    void SetCookTimerEntry();
+    void SetCookTimerExit();
 
-    void display_timer_entry();
-    void display_timer_exit();
+    void SetPowerLevelEntry();
+    void SetPowerLevelExit();
+
+    void DisplayTimerInitEntry();
+    void DisplayTimerInitExit();
 };
 #endif // MICROWAVE_H
