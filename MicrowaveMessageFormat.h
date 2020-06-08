@@ -132,7 +132,7 @@ public:
         Signal signal;
         Update update;
     };
-    char data[sizeof(Time)];
+    char data[sizeof(int)];
 };
 
 } // namespace MicrowaveMsgFormat

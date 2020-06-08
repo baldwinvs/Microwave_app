@@ -36,8 +36,7 @@ signals:
     void kitchen_timer_sig();
     void stop_sig();
     void start_sig();
-    void blink_on_sig();
-    void blink_off_sig();
+    void blink_sig(bool);
     void select_left_tens_sig();
     void select_left_ones_sig();
     void select_right_tens_sig();
@@ -72,6 +71,8 @@ private:
     MicrowaveMsgFormat::Message* rxMessage;
     MicrowaveMsgFormat::Time* time;
     quint32 powerLevel;
+    bool disableClockDisplay;
+    bool disablePowerLevel;
 
     QStateMachine* sm;
     QState* InitialState;
