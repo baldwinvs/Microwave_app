@@ -65,13 +65,14 @@ private:
     QTcpSocket* socket;
     QByteArray txBuf;
     QByteArray rxBuf;
-    QTimer* stateRequestTimer;
+    QTimer* timer;
 
     MicrowaveMsgFormat::Message* txMessage;
     MicrowaveMsgFormat::Message* rxMessage;
     MicrowaveMsgFormat::Time* time;
     quint32 powerLevel;
     bool disableClockDisplay;
+    bool disableDisplayTimer;
     bool disablePowerLevel;
 
     QStateMachine* sm;
@@ -117,7 +118,7 @@ private slots:
     void onTcpConnect();
     void onTcpDisconnect();
     void onReadyRead();
-    void onBytesWritten(qint64 bytes5);
+    void onBytesWritten(qint64 bytes);
 
     void sendTimeCook();
     void sendPowerLevel();
@@ -139,6 +140,8 @@ private slots:
 
     void displayTime();
     void displayPowerLevel();
+    void startDisplayPowerLevel2Sec();
+    void stopDisplayPowerLevel2Sec();
 
     void onStateRequestTimeout();
 
@@ -148,6 +151,7 @@ private slots:
     void blink_left_ones(const bool flag);
     void blink_right_tens(const bool flag);
     void blink_right_ones(const bool flag);
+    void blink_power_level(const bool flag);
 
     void clock_done();
 

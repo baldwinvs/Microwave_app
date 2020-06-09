@@ -23,7 +23,7 @@ Microwave::Microwave(QWidget *parent)
     , socket{new QTcpSocket(this)}
     , txBuf{}
     , rxBuf{}
-    , stateRequestTimer{new QTimer(this)}
+    , timer{new QTimer(this)}
     , txMessage{new MicrowaveMsgFormat::Message()}
     , rxMessage{new MicrowaveMsgFormat::Message()}
     , time{new MicrowaveMsgFormat::Time()}
@@ -254,15 +254,15 @@ void Microwave::SetupSetKitchenTimerState(QState *parent)
 
     connect(KitchenSelectMinuteOnes, SIGNAL(entered()), this, SLOT(SelectLeftOnesEntry()));
     connect(KitchenSelectMinuteOnes, SIGNAL(exited()), this, SLOT(SelectLeftOnesExit()));
-    KitchenSelectMinuteOnes->addTransition(this, SIGNAL(select_left_ones_sig()), KitchenSelectSecondTens);
+    KitchenSelectMinuteOnes->addTransition(this, SIGNAL(select_right_tens_sig()), KitchenSelectSecondTens);
 
     connect(KitchenSelectSecondTens, SIGNAL(entered()), this, SLOT(SelectRightTensEntry()));
     connect(KitchenSelectSecondTens, SIGNAL(exited()), this, SLOT(SelectRightTensExit()));
-    KitchenSelectSecondTens->addTransition(this, SIGNAL(select_left_ones_sig()), KitchenSelectSecondOnes);
+    KitchenSelectSecondTens->addTransition(this, SIGNAL(select_right_ones_sig()), KitchenSelectSecondOnes);
 
     connect(KitchenSelectSecondOnes, SIGNAL(entered()), this, SLOT(SelectRightOnesEntry()));
     connect(KitchenSelectSecondOnes, SIGNAL(exited()), this, SLOT(SelectRightOnesExit()));
-    KitchenSelectSecondOnes->addTransition(this, SIGNAL(select_left_ones_sig()), KitchenSelectMinuteTens);
+    KitchenSelectSecondOnes->addTransition(this, SIGNAL(select_left_tens_sig()), KitchenSelectMinuteTens);
 
     SetKitchenTimer->setInitialState(SetKitchenTimerInit);
 }
@@ -283,15 +283,16 @@ void Microwave::SetupDisplayTimerState(QState *parent)
 
 void Microwave::InitialStateEntry()
 {
-    connect(stateRequestTimer, SIGNAL(timeout()), this, SLOT(onStateRequestTimeout()));
-    stateRequestTimer->setInterval(500); // half second
-    stateRequestTimer->setSingleShot(false);
-    stateRequestTimer->start();
+    connect(timer, SIGNAL(timeout()), this, SLOT(onStateRequestTimeout()));
+    timer->setInterval(500); // half second
+    timer->setSingleShot(false);
+    timer->start();
 }
 
 void Microwave::InitialStateExit()
 {
-    stateRequestTimer->stop();
+    disconnect(timer, SIGNAL(timeout()), this, SLOT(onStateRequestTimeout()));
+    timer->stop();
 }
 
 void Microwave::DisplayClockInitEntry()
@@ -385,6 +386,7 @@ void Microwave::SetCookTimerEntry()
     qDebug() << "entered set_cook_time";
     disableClockDisplay = true;
     disablePowerLevel = true;
+    displayTime();
 }
 
 void Microwave::SetCookTimerExit()
@@ -398,12 +400,14 @@ void Microwave::SetPowerLevelEntry()
 {
     qDebug() << "entered set_power_level";
     disableClockDisplay = true;
+    connect(this, SIGNAL(blink_sig(bool)), this, SLOT(blink_power_level(bool)));
     displayPowerLevel();
 }
 
 void Microwave::SetPowerLevelExit()
 {
     qDebug() << "left set_power_level";
+    disconnect(this, SIGNAL(blink_sig(bool)), this, SLOT(blink_power_level(bool)));
     disableClockDisplay = false;
 }
 
@@ -411,6 +415,7 @@ void Microwave::DisplayTimerInitEntry()
 {
     qDebug() << "entered display_timer";
     connect(this, SIGNAL(clock_sig()), this, SIGNAL(display_timer_done_sig()));
+    connect(this, SIGNAL(power_level_sig()), this, SLOT(startDisplayPowerLevel2Sec()));
     disableClockDisplay = true;
     disablePowerLevel = true;
 }
@@ -419,6 +424,7 @@ void Microwave::DisplayTimerInitExit()
 {
     qDebug() << "left display_timer";
     disconnect(this, SIGNAL(clock_sig()), this, SIGNAL(display_timer_done_sig()));
+    disconnect(ui->pb_powerLevel, SIGNAL(clicked()), this, SLOT(startDisplayPowerLevel2Sec()));
     disableClockDisplay = false;
     disablePowerLevel = false;
 }
@@ -576,20 +582,22 @@ void Microwave::handleUpdate(const MicrowaveMsgFormat::Message &msg)
     using namespace MicrowaveMsgFormat;
     switch(msg.update) {
     case Update::CLOCK:
-        if(!disableClockDisplay) {
             time->left_tens = static_cast<uint32_t>(msg.data[0] - '0');
             time->left_ones = static_cast<uint32_t>(msg.data[1] - '0');
             time->right_tens = static_cast<uint32_t>(msg.data[2] - '0');
             time->right_ones = static_cast<uint32_t>(msg.data[3] - '0');
+        if(!disableClockDisplay) {
             displayTime();
         }
         break;
     case Update::DISPLAY_TIMER:
-        time->left_tens = static_cast<uint32_t>(msg.data[0] - '0');
-        time->left_ones = static_cast<uint32_t>(msg.data[1] - '0');
-        time->right_tens = static_cast<uint32_t>(msg.data[2] - '0');
-        time->right_ones = static_cast<uint32_t>(msg.data[3] - '0');
-        displayTime();
+            time->left_tens = static_cast<uint32_t>(msg.data[0] - '0');
+            time->left_ones = static_cast<uint32_t>(msg.data[1] - '0');
+            time->right_tens = static_cast<uint32_t>(msg.data[2] - '0');
+            time->right_ones = static_cast<uint32_t>(msg.data[3] - '0');
+        if(!disableDisplayTimer) {
+            displayTime();
+        }
         break;
     case Update::POWER_LEVEL:
         powerLevel = static_cast<uint32_t>(((msg.data[0] - '0') * 10) + (msg.data[1] - '0'));
@@ -739,6 +747,26 @@ void Microwave::displayPowerLevel()
     ui->colon->setText("");
 }
 
+void Microwave::startDisplayPowerLevel2Sec()
+{
+    static const qint32 twoSec {2000};
+    disconnect(this, SIGNAL(power_level_sig()), this, SLOT(startDisplayPowerLevel2Sec()));
+    connect(timer, SIGNAL(timeout()), this, SLOT(stopDisplayPowerLevel2Sec()));
+    disableDisplayTimer = true;
+    timer->setSingleShot(true);
+    timer->start(twoSec);
+    displayPowerLevel();
+}
+
+void Microwave::stopDisplayPowerLevel2Sec()
+{
+    timer->stop();
+    disconnect(timer, SIGNAL(timeout()), this, SLOT(stopDisplayPowerLevel2Sec()));
+    disableDisplayTimer = false;
+    displayTime();
+    connect(this, SIGNAL(power_level_sig()), this, SLOT(startDisplayPowerLevel2Sec()));
+}
+
 void Microwave::blink_colon(const bool flag)
 {
     ui->colon->setText(flag ? ":" : "");
@@ -762,6 +790,20 @@ void Microwave::blink_right_tens(const bool flag)
 void Microwave::blink_right_ones(const bool flag)
 {
     ui->right_ones->setText(flag ? QString::number(time->right_ones) : "");
+}
+
+void Microwave::blink_power_level(const bool flag)
+{
+    if(flag) {
+        displayPowerLevel();
+    }
+    else {
+        ui->colon->setText("");
+        ui->left_tens->setText("");
+        ui->left_ones->setText("");
+        ui->right_tens->setText("");
+        ui->right_ones->setText("");
+    }
 }
 
 void Microwave::clock_done()
