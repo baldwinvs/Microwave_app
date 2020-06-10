@@ -135,6 +135,25 @@ public:
     char data[sizeof(int)];
 };
 
+void ByteSwap_long(void* data)
+{
+    uint32_t& value = *reinterpret_cast<uint32_t*>(data);
+    value = (((value & 0xFF000000) >> 24) |
+             ((value & 0x00FF0000) >>  8) |
+             ((value & 0x0000FF00) <<  8) |
+             ((value & 0x000000FF) << 24));
+}
+
+Message ByteSwapMessage(const Message& message)
+{
+    Message ret{message};
+    ByteSwap_long(&ret.dst);
+    ByteSwap_long(&ret.state);
+    //don't byte swap the data array, doesn't need it
+
+    return ret;
+}
+
 } // namespace MicrowaveMsgFormat
 
 #endif // MICROWAVE_MESSAGE_FORMAT_H
