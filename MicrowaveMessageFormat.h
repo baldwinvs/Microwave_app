@@ -135,7 +135,7 @@ public:
     char data[sizeof(int)];
 };
 
-void ByteSwap_long(void* data)
+inline void ByteSwap_long(void* data)
 {
     uint32_t& value = *reinterpret_cast<uint32_t*>(data);
     value = (((value & 0xFF000000) >> 24) |
@@ -144,7 +144,7 @@ void ByteSwap_long(void* data)
              ((value & 0x000000FF) << 24));
 }
 
-Message ByteSwapMessage(const Message& message)
+inline Message ByteSwapMessage(const Message& message)
 {
     Message ret{message};
     ByteSwap_long(&ret.dst);

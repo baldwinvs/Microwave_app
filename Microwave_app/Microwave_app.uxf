@@ -1,0 +1,1488 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<diagram program="umlet" version="14.3.0">
+  <zoom_level>5</zoom_level>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>425</x>
+      <y>915</y>
+      <w>150</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;280.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>430</x>
+      <y>905</y>
+      <w>135</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>cook_time_sig()
+style=wordwrap
+halign=center</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>195</x>
+      <y>1015</y>
+      <w>15</w>
+      <h>60</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;100.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>405</x>
+      <y>1015</y>
+      <w>15</w>
+      <h>60</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;100.0</additional_attributes>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>200</x>
+      <y>1030</y>
+      <w>65</w>
+      <h>25</h>
+    </coordinates>
+    <panel_attributes>power_level_sig()
+style=wordwrap
+valign=center</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>60</x>
+      <y>160</y>
+      <w>1325</w>
+      <h>1265</h>
+    </coordinates>
+    <panel_attributes>Started
+--
+button_time_cook pressed/ sendCookTimeSignal()
+button_power_level pressed/ sendPowerLevelSignal()
+button_kitchen_timer pressed/ sendKitchenTimerSignal()
+button_clock pressed/ sendClockSignal()
+button_start pressed/ sendStartSignal()
+button_stop pressed/ sendStopSignal()
+button_&lt;#&gt; pressed/ send&lt;#&gt;Signal()
+fontsize=24
+valign=top</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>955</x>
+      <y>715</y>
+      <w>150</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>280.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>435</x>
+      <y>60</y>
+      <w>180</w>
+      <h>65</h>
+    </coordinates>
+    <panel_attributes>Stopped
+--
+valign=top</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>610</x>
+      <y>80</y>
+      <w>105</w>
+      <h>90</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;190.0;10.0;190.0;160.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>340</x>
+      <y>80</y>
+      <w>105</w>
+      <h>90</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;160.0;10.0;10.0;190.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>0</x>
+      <y>0</y>
+      <w>1440</w>
+      <h>1475</h>
+    </coordinates>
+    <panel_attributes>Microwave::root
+--
+valign=top</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>710</x>
+      <y>100</y>
+      <w>130</w>
+      <h>35</h>
+    </coordinates>
+    <panel_attributes>...</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>205</x>
+      <y>120</y>
+      <w>135</w>
+      <h>35</h>
+    </coordinates>
+    <panel_attributes>...</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>180</x>
+      <y>1110</y>
+      <w>240</w>
+      <h>70</h>
+    </coordinates>
+    <panel_attributes>SetCookTimerInitial
+--
+valign=top
+group=2</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLSpecialState</id>
+    <coordinates>
+      <x>390</x>
+      <y>1080</y>
+      <w>10</w>
+      <h>10</h>
+    </coordinates>
+    <panel_attributes>type=initial
+group=2</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>390</x>
+      <y>1080</y>
+      <w>15</w>
+      <h>40</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-
+group=2</panel_attributes>
+    <additional_attributes>10.0;60.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>170</x>
+      <y>1065</y>
+      <w>260</w>
+      <h>125</h>
+    </coordinates>
+    <panel_attributes>SetPowerLevel
+--
+valign=top
+style=wordwrap
+group=2</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>685</x>
+      <y>625</y>
+      <w>260</w>
+      <h>550</h>
+    </coordinates>
+    <panel_attributes>SetClock
+--
+entry/ connect clock_sig() to clock_done(),
+          connect stop_sig() to clock_done(),
+          remove cook_time_sig() to SetCookTimer transition,
+          remove kitchen_timer_sig() to SetKitchenTimer transition,
+          remove start_sig() to DisplayTimer transition
+exit/ disconnect clock_sig() from clock_done(),
+        disconnect stop_sig() from clock_done()),
+        add cook_time_sig() to SetCookTimer transition,
+        add kitchen_timer_sig() to SetKitchenTimer transition,
+        add start_sig() to DisplayTimer transition
+              
+valign=top</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>865</x>
+      <y>605</y>
+      <w>40</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>clock_sig()
+style=wordwrap
+halign=center</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>855</x>
+      <y>880</y>
+      <w>15</w>
+      <h>50</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;80.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>705</x>
+      <y>920</y>
+      <w>195</w>
+      <h>50</h>
+    </coordinates>
+    <panel_attributes>ClockSelectHourOnes
+--
+entry/ connect blink_on_sig() to blink_left_ones(true),
+          connect blink_off_sig() to blink_left_ones(false)
+exit/ disconnect blink_on_sig() from blink_left_ones(),
+        disconnect blink_off_sig() from blink_left_ones()
+valign=top</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>780</x>
+      <y>895</y>
+      <w>80</w>
+      <h>25</h>
+    </coordinates>
+    <panel_attributes>select_left_ones_sig()
+style=wordwrap</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>705</x>
+      <y>1005</y>
+      <w>195</w>
+      <h>50</h>
+    </coordinates>
+    <panel_attributes>ClockSelectMinuteTens
+--
+entry/ connect blink_on_sig() to blink_right_tens(true),
+          connect blink_off_sig() to blink_right_tens(false)
+exit/ disconnect blink_on_sig() from blink_right_tens(),
+        disconnect blink_off_sig() from blink_right_tens()
+valign=top</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>855</x>
+      <y>965</y>
+      <w>15</w>
+      <h>50</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;80.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>780</x>
+      <y>980</y>
+      <w>80</w>
+      <h>25</h>
+    </coordinates>
+    <panel_attributes>select_right_tens_sig()
+style=wordwrap</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>705</x>
+      <y>1090</y>
+      <w>195</w>
+      <h>50</h>
+    </coordinates>
+    <panel_attributes>ClockSelectMinuteOnes
+--
+entry/ connect blink_on_sig() to blink_right_ones(true),
+          connect blink_off_sig() to blink_right_ones(false)
+exit/ disconnect blink_on_sig() from blink_right_ones(),
+        disconnect blink_off_sig() from blink_right_ones()
+valign=top</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>855</x>
+      <y>1050</y>
+      <w>15</w>
+      <h>50</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;80.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>775</x>
+      <y>1065</y>
+      <w>85</w>
+      <h>25</h>
+    </coordinates>
+    <panel_attributes>select_right_ones_sig()
+style=wordwrap</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>855</x>
+      <y>850</y>
+      <w>75</w>
+      <h>320</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>90.0;10.0;130.0;10.0;130.0;620.0;10.0;620.0;10.0;580.0</additional_attributes>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>780</x>
+      <y>1145</y>
+      <w>80</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>select_left_tens_sig()
+style=wordwrap</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>560</x>
+      <y>675</y>
+      <w>135</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;250.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>600</x>
+      <y>665</y>
+      <w>85</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>clock_done_sig()
+style=wordwrap
+halign=center</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>565</x>
+      <y>480</y>
+      <w>395</w>
+      <h>710</h>
+    </coordinates>
+    <panel_attributes>DisplayClock
+--
+valign=top</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>565</x>
+      <y>1265</y>
+      <w>395</w>
+      <h>130</h>
+    </coordinates>
+    <panel_attributes>DisplayTimer
+--
+valign=top</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>625</x>
+      <y>1185</y>
+      <w>15</w>
+      <h>90</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;160.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>170</x>
+      <y>895</y>
+      <w>260</w>
+      <h>125</h>
+    </coordinates>
+    <panel_attributes>SetCookTimer
+--
+valign=top</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>180</x>
+      <y>940</y>
+      <w>240</w>
+      <h>70</h>
+    </coordinates>
+    <panel_attributes>SetCookTimerInitial
+--
+valign=top</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>350</x>
+      <y>1030</y>
+      <w>60</w>
+      <h>25</h>
+    </coordinates>
+    <panel_attributes>cook_time_sig()
+style=wordwrap
+valign=center</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLSpecialState</id>
+    <coordinates>
+      <x>585</x>
+      <y>35</y>
+      <w>10</w>
+      <h>10</h>
+    </coordinates>
+    <panel_attributes>type=initial</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>585</x>
+      <y>40</y>
+      <w>15</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;40.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>685</x>
+      <y>535</y>
+      <w>260</w>
+      <h>65</h>
+    </coordinates>
+    <panel_attributes>DisplayClockInit
+--
+entry/ connect blink_on_sig() to blink_colon(true),
+          connect blink_off_sig() to blink_colon(false)
+exit/ disconnect blink_on_sig() from blink_colon(),
+        disconnect blink_off_sig() to blink_colon()
+valign=top</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>705</x>
+      <y>750</y>
+      <w>195</w>
+      <h>50</h>
+    </coordinates>
+    <panel_attributes>SetClockInit
+--
+valign=top</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>855</x>
+      <y>720</y>
+      <w>15</w>
+      <h>40</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;60.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLSpecialState</id>
+    <coordinates>
+      <x>855</x>
+      <y>720</y>
+      <w>10</w>
+      <h>10</h>
+    </coordinates>
+    <panel_attributes>type=initial</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>780</x>
+      <y>810</y>
+      <w>80</w>
+      <h>25</h>
+    </coordinates>
+    <panel_attributes>select_left_tens_sig()
+style=wordwrap</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>855</x>
+      <y>795</y>
+      <w>15</w>
+      <h>50</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;80.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>705</x>
+      <y>835</y>
+      <w>195</w>
+      <h>50</h>
+    </coordinates>
+    <panel_attributes>ClockSelectHourTens
+--
+entry/ connect blink_on_sig() to blink_left_tens(true),
+          connect blink_off_sig() to blink_left_tens(false)
+exit/ disconnect blink_on_sig() from blink_left_tens(),
+        disconnect blink_off_sig() from blink_left_tens()
+valign=top</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>900</x>
+      <y>595</y>
+      <w>15</w>
+      <h>40</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;60.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLSpecialState</id>
+    <coordinates>
+      <x>900</x>
+      <y>505</y>
+      <w>10</w>
+      <h>10</h>
+    </coordinates>
+    <panel_attributes>type=initial</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>900</x>
+      <y>505</y>
+      <w>15</w>
+      <h>40</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;60.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLSpecialState</id>
+    <coordinates>
+      <x>810</x>
+      <y>245</y>
+      <w>10</w>
+      <h>10</h>
+    </coordinates>
+    <panel_attributes>type=initial</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>810</x>
+      <y>245</y>
+      <w>15</w>
+      <h>40</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;60.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>390</x>
+      <y>910</y>
+      <w>15</w>
+      <h>40</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-
+group=1</panel_attributes>
+    <additional_attributes>10.0;60.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLSpecialState</id>
+    <coordinates>
+      <x>390</x>
+      <y>910</y>
+      <w>10</w>
+      <h>10</h>
+    </coordinates>
+    <panel_attributes>type=initial
+group=1</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1265</x>
+      <y>895</y>
+      <w>15</w>
+      <h>50</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-
+group=3</panel_attributes>
+    <additional_attributes>10.0;80.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>1115</x>
+      <y>935</y>
+      <w>195</w>
+      <h>50</h>
+    </coordinates>
+    <panel_attributes>KitchenSelectMinuteOnes
+--
+entry/ connect blink_on_sig() to blink_left_ones(true),
+          connect blink_off_sig() to blink_left_ones(false)
+exit/ disconnect blink_on_sig() from blink_left_ones(),
+        disconnect blink_off_sig() from blink_left_ones()
+valign=top
+group=3</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>1190</x>
+      <y>910</y>
+      <w>80</w>
+      <h>25</h>
+    </coordinates>
+    <panel_attributes>select_left_ones_sig()
+style=wordwrap
+group=3</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>1115</x>
+      <y>1020</y>
+      <w>195</w>
+      <h>50</h>
+    </coordinates>
+    <panel_attributes>KitchenSelectSecondTens
+--
+entry/ connect blink_on_sig() to blink_right_tens(true),
+          connect blink_off_sig() to blink_right_tens(false)
+exit/ disconnect blink_on_sig() from blink_right_tens(),
+        disconnect blink_off_sig() from blink_right_tens()
+valign=top
+group=3</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1265</x>
+      <y>980</y>
+      <w>15</w>
+      <h>50</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-
+group=3</panel_attributes>
+    <additional_attributes>10.0;80.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>1190</x>
+      <y>995</y>
+      <w>80</w>
+      <h>25</h>
+    </coordinates>
+    <panel_attributes>select_right_tens_sig()
+style=wordwrap
+group=3</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>1115</x>
+      <y>1105</y>
+      <w>195</w>
+      <h>50</h>
+    </coordinates>
+    <panel_attributes>KitchenSelectSecondOnes
+--
+entry/ connect blink_on_sig() to blink_right_ones(true),
+          connect blink_off_sig() to blink_right_ones(false)
+exit/ disconnect blink_on_sig() from blink_right_ones(),
+        disconnect blink_off_sig() from blink_right_ones()
+valign=top
+group=3</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1265</x>
+      <y>1065</y>
+      <w>15</w>
+      <h>50</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-
+group=3</panel_attributes>
+    <additional_attributes>10.0;80.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>1185</x>
+      <y>1080</y>
+      <w>85</w>
+      <h>25</h>
+    </coordinates>
+    <panel_attributes>select_right_ones_sig()
+style=wordwrap
+group=3</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1265</x>
+      <y>865</y>
+      <w>75</w>
+      <h>320</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-
+group=3</panel_attributes>
+    <additional_attributes>90.0;10.0;130.0;10.0;130.0;620.0;10.0;620.0;10.0;580.0</additional_attributes>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>1190</x>
+      <y>1160</y>
+      <w>80</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>select_left_tens_sig()
+style=wordwrap
+group=3</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>1115</x>
+      <y>765</y>
+      <w>195</w>
+      <h>50</h>
+    </coordinates>
+    <panel_attributes>SetKitchenTimerInit
+--
+valign=top
+group=3</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1265</x>
+      <y>735</y>
+      <w>15</w>
+      <h>40</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-
+group=3</panel_attributes>
+    <additional_attributes>10.0;60.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLSpecialState</id>
+    <coordinates>
+      <x>1265</x>
+      <y>735</y>
+      <w>10</w>
+      <h>10</h>
+    </coordinates>
+    <panel_attributes>type=initial
+group=3</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>1190</x>
+      <y>825</y>
+      <w>80</w>
+      <h>25</h>
+    </coordinates>
+    <panel_attributes>select_left_tens_sig()
+style=wordwrap
+group=3</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1265</x>
+      <y>810</y>
+      <w>15</w>
+      <h>50</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-
+group=3</panel_attributes>
+    <additional_attributes>10.0;80.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>1115</x>
+      <y>850</y>
+      <w>195</w>
+      <h>50</h>
+    </coordinates>
+    <panel_attributes>KitchenSelectMinuteTens
+--
+entry/ connect blink_on_sig() to blink_left_tens(true),
+          connect blink_off_sig() to blink_left_tens(false)
+exit/ disconnect blink_on_sig() from blink_left_tens(),
+        disconnect blink_off_sig() from blink_left_tens()
+valign=top
+group=3</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>1095</x>
+      <y>670</y>
+      <w>260</w>
+      <h>520</h>
+    </coordinates>
+    <panel_attributes>SetKitchenTimer
+--
+              
+valign=top
+group=3</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>655</x>
+      <y>1320</y>
+      <w>230</w>
+      <h>60</h>
+    </coordinates>
+    <panel_attributes>DisplayTimerInit
+--
+entry/ connect clock_sig() to display_timer_done_sig()
+exit/ disconnect clock_sig() from display_timer_done_sig()
+valign=top</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>855</x>
+      <y>1290</y>
+      <w>15</w>
+      <h>40</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;60.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLSpecialState</id>
+    <coordinates>
+      <x>855</x>
+      <y>1290</y>
+      <w>10</w>
+      <h>10</h>
+    </coordinates>
+    <panel_attributes>type=initial</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>630</x>
+      <y>1215</y>
+      <w>90</w>
+      <h>25</h>
+    </coordinates>
+    <panel_attributes>display_timer_done_sig(),
+stop_sig()
+style=wordwrap
+halign=center</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>955</x>
+      <y>765</y>
+      <w>150</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;280.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>425</x>
+      <y>1165</y>
+      <w>150</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>280.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>425</x>
+      <y>995</y>
+      <w>150</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>280.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>430</x>
+      <y>985</y>
+      <w>135</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>stop_sig()
+style=wordwrap
+halign=center</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>430</x>
+      <y>1155</y>
+      <w>135</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>stop_sig()
+style=wordwrap
+halign=center</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>960</x>
+      <y>755</y>
+      <w>135</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>stop_sig()
+style=wordwrap
+halign=center</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>680</x>
+      <y>555</y>
+      <w>130</w>
+      <h>5</h>
+    </coordinates>
+    <panel_attributes>kitchen_timer_sig()
+style=wordwrap
+halign=center</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>960</x>
+      <y>705</y>
+      <w>135</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>kitchen_timer_sig()
+style=wordwrap
+halign=center</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>955</x>
+      <y>1185</y>
+      <w>175</w>
+      <h>115</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;210.0;330.0;210.0;330.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>400</x>
+      <y>1185</y>
+      <w>175</w>
+      <h>125</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>330.0;230.0;10.0;230.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>140</x>
+      <y>985</y>
+      <w>435</w>
+      <h>340</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>850.0;660.0;10.0;660.0;10.0;10.0;60.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>915</x>
+      <y>1185</y>
+      <w>15</w>
+      <h>90</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;160.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>830</x>
+      <y>1215</y>
+      <w>90</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>start_sig()
+style=wordwrap
+halign=center</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>1035</x>
+      <y>1215</y>
+      <w>85</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>start_sig()
+style=wordwrap
+halign=center</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>320</x>
+      <y>1215</y>
+      <w>85</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>start_sig()
+style=wordwrap
+halign=center</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>60</x>
+      <y>1215</y>
+      <w>85</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>start_sig()
+style=wordwrap
+halign=center</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>835</x>
+      <y>415</y>
+      <w>290</w>
+      <h>715</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>560.0;1410.0;460.0;1410.0;460.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>495</x>
+      <y>310</y>
+      <w>135</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>state_req_power_level()
+style=wordwrap
+halign=center</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>840</x>
+      <y>405</y>
+      <w>135</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>state_req_kitchen_select_right_ones()
+style=wordwrap
+halign=center</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>840</x>
+      <y>385</y>
+      <w>135</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>state_req_kitchen_select_right_tens()
+style=wordwrap
+halign=center</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>840</x>
+      <y>365</y>
+      <w>135</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>state_req_kitchen_select_left_ones()
+style=wordwrap
+halign=center</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>840</x>
+      <y>345</y>
+      <w>135</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>state_req_kitchen_select_left_tens()
+style=wordwrap
+halign=center</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>835</x>
+      <y>395</y>
+      <w>290</w>
+      <h>650</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>560.0;1280.0;470.0;1280.0;470.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>835</x>
+      <y>375</y>
+      <w>290</w>
+      <h>585</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>560.0;1150.0;480.0;1150.0;480.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>505</x>
+      <y>410</y>
+      <w>125</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>state_req_clock_select_right_ones()
+style=wordwrap
+halign=center</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>510</x>
+      <y>390</y>
+      <w>120</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>state_req_clock_select_right_tens()
+style=wordwrap
+halign=center</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>510</x>
+      <y>370</y>
+      <w>120</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>state_req_clock_select_left_ones()
+style=wordwrap
+halign=center</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>510</x>
+      <y>350</y>
+      <w>120</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>state_req_clock_select_left_tens()
+style=wordwrap
+halign=center</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>490</x>
+      <y>360</y>
+      <w>225</w>
+      <h>500</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>430.0;980.0;80.0;980.0;10.0;10.0;280.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>495</x>
+      <y>380</y>
+      <w>220</w>
+      <h>570</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>420.0;1120.0;90.0;1120.0;10.0;10.0;270.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>500</x>
+      <y>400</y>
+      <w>215</w>
+      <h>635</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>410.0;1250.0;100.0;1250.0;10.0;10.0;260.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>505</x>
+      <y>420</y>
+      <w>210</w>
+      <h>700</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>400.0;1380.0;110.0;1380.0;10.0;10.0;250.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>630</x>
+      <y>275</y>
+      <w>210</w>
+      <h>160</h>
+    </coordinates>
+    <panel_attributes>InitialState
+--
+entry/ SendStateRequest()
+valign=top</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>835</x>
+      <y>355</y>
+      <w>290</w>
+      <h>445</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>560.0;870.0;490.0;870.0;490.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>815</x>
+      <y>430</y>
+      <w>15</w>
+      <h>60</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;100.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>425</x>
+      <y>300</y>
+      <w>215</w>
+      <h>650</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;1280.0;50.0;1280.0;50.0;10.0;410.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>495</x>
+      <y>290</y>
+      <w>135</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>state_req_set_cook_timer()
+style=wordwrap
+halign=center</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>425</x>
+      <y>320</y>
+      <w>215</w>
+      <h>780</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;1540.0;60.0;1540.0;60.0;10.0;410.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>495</x>
+      <y>330</y>
+      <w>135</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>state_req_display_timer()
+style=wordwrap
+halign=center</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>455</x>
+      <y>340</y>
+      <w>185</w>
+      <h>955</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>220.0;1890.0;10.0;1890.0;10.0;10.0;350.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>700</x>
+      <y>445</y>
+      <w>120</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>state_req_display_clock()
+style=wordwrap
+halign=center</panel_attributes>
+    <additional_attributes/>
+  </element>
+</diagram>

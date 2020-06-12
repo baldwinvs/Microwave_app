@@ -424,7 +424,8 @@ void Microwave::DisplayTimerInitExit()
 {
     qDebug() << "left display_timer";
     disconnect(this, SIGNAL(clock_sig()), this, SIGNAL(display_timer_done_sig()));
-    disconnect(ui->pb_powerLevel, SIGNAL(clicked()), this, SLOT(startDisplayPowerLevel2Sec()));
+    disconnect(this, SIGNAL(power_level_sig()), this, SLOT(startDisplayPowerLevel2Sec()));
+    disconnect(timer, SIGNAL(timeout()), this, SLOT(stopDisplayPowerLevel2Sec()));
     disableClockDisplay = false;
     disablePowerLevel = false;
 }
@@ -446,16 +447,14 @@ void Microwave::onTcpDisconnect()
 void Microwave::onReadyRead()
 {
     using namespace MicrowaveMsgFormat;
-    static const qint32 NonUpdateSize = sizeof(int) * 2;
     static const qint32 MessageSize = sizeof(Message);
 
     rxBuf.append(socket->readAll());
 
     //handle received data
-    while(rxBuf.size() >= NonUpdateSize) {
-        char * tmp {strstr(rxBuf.data(), "ppaM")};
+    while(rxBuf.size() >= MessageSize) {
+        char * tmp {strstr(rxBuf.data(), "Mapp")};
         if(tmp) {
-            *rxMessage = Message(tmp);
         }
         else {
             //clear everything except the last 3 bytes because
@@ -612,7 +611,9 @@ void Microwave::handleUpdate(const MicrowaveMsgFormat::Message &msg)
 
 void Microwave::writeData()
 {
-    txBuf.append(reinterpret_cast<char*>(txMessage), sizeof(MicrowaveMsgFormat::Message));
+    //swap from host to network byte order
+    MicrowaveMsgFormat::Message message {ByteSwapMessage(*txMessage)};
+    txBuf.append(reinterpret_cast<char*>(&message), sizeof(MicrowaveMsgFormat::Message));
     if(socket->state() == QAbstractSocket::ConnectedState) {
         const qint64 count {socket->write(txBuf)};
         if(-1 == count) {
@@ -753,6 +754,7 @@ void Microwave::startDisplayPowerLevel2Sec()
     disconnect(this, SIGNAL(power_level_sig()), this, SLOT(startDisplayPowerLevel2Sec()));
     connect(timer, SIGNAL(timeout()), this, SLOT(stopDisplayPowerLevel2Sec()));
     disableDisplayTimer = true;
+    disablePowerLevel = false;
     timer->setSingleShot(true);
     timer->start(twoSec);
     displayPowerLevel();
@@ -763,6 +765,7 @@ void Microwave::stopDisplayPowerLevel2Sec()
     timer->stop();
     disconnect(timer, SIGNAL(timeout()), this, SLOT(stopDisplayPowerLevel2Sec()));
     disableDisplayTimer = false;
+    disablePowerLevel = true;
     displayTime();
     connect(this, SIGNAL(power_level_sig()), this, SLOT(startDisplayPowerLevel2Sec()));
 }
