@@ -455,6 +455,7 @@ void Microwave::onReadyRead()
     while(rxBuf.size() >= MessageSize) {
         char * tmp {strstr(rxBuf.data(), "Mapp")};
         if(tmp) {
+            *rxMessage = ByteSwapMessage(Message(tmp));
         }
         else {
             //clear everything except the last 3 bytes because
